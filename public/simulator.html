@@ -117,6 +117,18 @@
     .share-btn svg{flex-shrink:0;}
 
     /* ===== BRACKET TREE ===== */
+    /* Round jump nav */
+    .bk-nav{display:flex;gap:4px;overflow-x:auto;padding:0 0 10px;scrollbar-width:none;flex-wrap:nowrap;}
+    .bk-nav::-webkit-scrollbar{display:none;}
+    .bk-nav-btn{flex-shrink:0;padding:4px 10px;border-radius:20px;font-size:.7rem;font-weight:700;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .15s;white-space:nowrap;}
+    .bk-nav-btn:hover{color:var(--text);border-color:rgba(255,255,255,.2);}
+    .bk-nav-btn.bk-nav-final{border-color:rgba(251,191,36,.5);color:var(--gold);}
+    .bk-nav-btn.bk-nav-final:hover{background:rgba(251,191,36,.08);}
+    /* Scroll wrapper with edge gradient fades */
+    .bk-wrap{position:relative;}
+    .bk-wrap::before,.bk-wrap::after{content:'';position:absolute;top:0;bottom:0;width:52px;z-index:2;pointer-events:none;}
+    .bk-wrap::before{left:0;border-radius:12px 0 0 12px;background:linear-gradient(to right,var(--card) 20%,transparent);}
+    .bk-wrap::after{right:0;border-radius:0 12px 12px 0;background:linear-gradient(to left,var(--card) 20%,transparent);}
     .bk-scroll{overflow-x:auto;overflow-y:hidden;border:1px solid var(--border);border-radius:12px;background:var(--card);}
     .bk-outer{padding:36px 16px 20px;position:relative;width:fit-content;min-width:100%;}
 
@@ -197,7 +209,7 @@
       <button class="reset-ko-btn" onclick="resetKnockout()">Kazanan Seçimlerini Sıfırla</button>
     </div>
     <div class="ko-info">
-      Grup simülasyonundan otomatik güncellenir. Her kutucukta kazananı seçmek için takıma tıkla.
+      Grup simülasyonundan otomatik güncellenir. Her maçta kazanan takıma tıkla → Final'de tıkladığın takım şampiyon olur.
     </div>
     <div id="championBox" style="display:none" class="champion-box">
       <div class="champ-label">🥇 2026 Dünya Şampiyonu</div>
@@ -208,10 +220,15 @@
         Tahminimi Paylaş
       </button>
     </div>
-    <div class="bk-scroll">
-      <div class="bk-outer" id="bkOuter">
-        <div class="bk-rnames" id="bkRnames"></div>
-        <div class="bk-inner" id="bkInner"></div>
+    <!-- Round jump nav -->
+    <div class="bk-nav" id="bkNav"></div>
+    <!-- Bracket with edge fades -->
+    <div class="bk-wrap">
+      <div class="bk-scroll" id="bkScroll">
+        <div class="bk-outer" id="bkOuter">
+          <div class="bk-rnames" id="bkRnames"></div>
+          <div class="bk-inner" id="bkInner"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -526,6 +543,8 @@ function generateBracket(resetPicks=true){
     ko[m.id].teamA=null;ko[m.id].teamB=null;
     if(resetPicks)ko[m.id].winner=null;
   });
+  // Simüle edildiğinde (resetPicks=true) merkeze yeniden kaydır
+  if(resetPicks){const sc=document.getElementById('bkScroll');if(sc)delete sc.dataset.centered;}
 
   const standings={};
   for(const gk of Object.keys(GROUPS_ORIG))standings[gk]=calcStandings(gk);
@@ -563,6 +582,12 @@ function selectWinner(matchId,side){
   m.winner=side==='A'?m.teamA:m.teamB;
   advanceKo(matchId);
   renderBracket();
+  // Final seçiminde şampiyona otomatik scroll
+  if(matchId==='M104'){
+    setTimeout(()=>{
+      document.getElementById('championBox')?.scrollIntoView({behavior:'smooth',block:'center'});
+    },80);
+  }
 }
 
 function advanceKo(matchId){
@@ -577,7 +602,15 @@ function advanceKo(matchId){
 
 function resetKnockout(){
   BRACKET.forEach(m=>{ko[m.id]={teamA:null,teamB:null,winner:null};});
+  const sc=document.getElementById('bkScroll');if(sc)delete sc.dataset.centered;
   renderBracket();
+}
+
+function scrollToCol(ci){
+  const sc=document.getElementById('bkScroll');
+  if(!sc)return;
+  const targetX=BK_CX*ci;
+  sc.scrollTo({left:Math.max(0,targetX-(sc.clientWidth-BK_CW)/2),behavior:'smooth'});
 }
 
 // ============================================================
@@ -665,6 +698,17 @@ function renderBracket(){
   inner.style.height=`${BK_H}px`;
   outer.style.width=`${BK_TOTAL_W+32}px`;
 
+  // Round jump nav
+  const navDefs=[
+    {lbl:'← Son 32',ci:0},{lbl:'← Son 16',ci:1},{lbl:'← Çeyrek',ci:2},{lbl:'← Yarı Final',ci:3},
+    {lbl:'⚽ FİNAL',ci:4,final:true},
+    {lbl:'Yarı Final →',ci:5},{lbl:'Çeyrek →',ci:6},{lbl:'Son 16 →',ci:7},{lbl:'Son 32 →',ci:8},
+  ];
+  const navEl=document.getElementById('bkNav');
+  if(navEl)navEl.innerHTML=navDefs.map(n=>
+    `<button class="bk-nav-btn${n.final?' bk-nav-final':''}" onclick="scrollToCol(${n.ci})">${n.lbl}</button>`
+  ).join('');
+
   // Şampiyon
   const fin=ko['M104'],box=document.getElementById('championBox');
   if(fin&&fin.winner){
@@ -672,6 +716,15 @@ function renderBracket(){
     document.getElementById('champName').textContent=fin.winner.name;
     box.style.display='block';
   }else box.style.display='none';
+
+  // Final'e (merkeze) otomatik kaydır — sadece ilk render'da
+  requestAnimationFrame(()=>{
+    const sc=document.getElementById('bkScroll');
+    if(!sc||sc.dataset.centered)return;
+    const finalX=BK_CX*4;
+    sc.scrollLeft=Math.max(0,finalX-(sc.clientWidth-BK_CW)/2);
+    sc.dataset.centered='1';
+  });
 }
 
 // ============================================================
@@ -716,8 +769,8 @@ function shareResult(){
   if(!fin||!fin.winner)return;
   const w=fin.winner;
   const text=`${w.flag} ${w.name} 2026 Dünya Kupası'nı kazanacak! 🏆 Sen de simüle et → dk26simule.vercel.app #WC2026 #DK26Simule`;
-  const url=`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-  window.open(url,'_blank','noopener,noreferrer,width=550,height=420');
+  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`,
+    '_blank','noopener,noreferrer,width=550,height=420');
 }
 </script>
 </body>
