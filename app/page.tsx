@@ -8,74 +8,94 @@ export const revalidate = 60
 export default async function Home() {
   let matches: Match[] = []
   let standings: StandingGroup[] = []
-  let error = ''
+  let apiError = ''
 
   try {
     const [mData, sData] = await Promise.all([fetchMatches(), fetchStandings()])
     matches = mData.matches ?? []
     standings = sData.standings ?? []
   } catch (e) {
-    error = e instanceof Error ? e.message : 'Veri alınamadı'
+    apiError = e instanceof Error ? e.message : 'Veri alınamadı'
   }
 
   const liveMatches = matches.filter(m => isLive(m.status))
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      {/* Page header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">2026 FIFA Dünya Kupası</h1>
-        <p className="mt-1 text-sm text-muted">Canlı sonuçlar · Puan durumları · Maç takvimi</p>
+    <div className="mx-auto max-w-6xl px-4 py-10">
+      {/* Page headline */}
+      <div className="mb-10">
+        <h1 className="text-3xl font-extrabold tracking-tight text-primary">
+          2026 FIFA Dünya Kupası
+        </h1>
+        <p className="mt-1.5 text-sm text-muted">
+          Canlı sonuçlar · Puan durumları · Maç takvimi
+        </p>
       </div>
 
-      {error && (
-        <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          ⚠️ {error}
+      {/* Error */}
+      {apiError && (
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/8 px-4 py-3 text-sm text-red-400">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" className="shrink-0 opacity-80">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" />
+          </svg>
+          {apiError}
         </div>
       )}
 
-      {/* Live matches banner */}
+      {/* Live banner */}
       {liveMatches.length > 0 && (
-        <section className="mb-8">
+        <section className="mb-10">
           <div className="mb-3 flex items-center gap-2">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-green-400"></span>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-green-400">Şu An Oynanıyor</h2>
+            <span className="h-2 w-2 animate-pulse-dot rounded-full bg-positive" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-positive">
+              Şu An Oynanıyor
+            </h2>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {liveMatches.map(m => (
-              <LiveMatchCard key={m.id} match={m} />
-            ))}
+            {liveMatches.map(m => <LiveCard key={m.id} match={m} />)}
           </div>
         </section>
       )}
 
-      {/* Group tabs section */}
+      {/* Divider */}
+      <div className="mb-8 h-px w-full bg-line/50" />
+
+      {/* Groups */}
       <GroupTabs matches={matches} standings={standings} />
     </div>
   )
 }
 
-function LiveMatchCard({ match: m }: { match: Match }) {
+function LiveCard({ match: m }: { match: Match }) {
   const { text, cls } = statusLabel(m.status)
+  const h = m.score.fullTime.home
+  const a = m.score.fullTime.away
+
   return (
-    <div className="rounded-xl border border-green-500/20 bg-card p-4 shadow-lg shadow-green-500/5">
-      <div className={`mb-2 text-xs font-semibold ${cls}`}>{text}</div>
+    <div className="rounded-xl border border-positive/20 bg-card p-4 shadow-md shadow-positive/5">
+      <div className={`mb-3 flex items-center gap-1.5 text-xs font-bold ${cls}`}>
+        <span className="h-1.5 w-1.5 animate-pulse-dot rounded-full bg-positive" />
+        {text}
+      </div>
       <div className="flex items-center gap-3">
-        <div className="flex flex-1 items-center gap-2 truncate">
-          <img src={m.homeTeam.crest} alt="" className="h-6 w-6 object-contain" />
-          <span className="truncate text-sm font-semibold">{m.homeTeam.shortName}</span>
+        {/* Home */}
+        <div className="flex flex-1 items-center gap-2 overflow-hidden">
+          <img src={m.homeTeam.crest} alt="" className="h-7 w-7 object-contain" />
+          <span className="truncate text-sm font-semibold text-primary">{m.homeTeam.shortName}</span>
         </div>
-        <div className="flex items-center gap-1 text-lg font-bold text-white">
-          <span>{m.score.fullTime.home ?? '—'}</span>
-          <span className="text-muted">:</span>
-          <span>{m.score.fullTime.away ?? '—'}</span>
+        {/* Score */}
+        <div className="flex shrink-0 items-center gap-1 font-mono text-xl font-bold">
+          <span className={h! > a! ? 'text-primary' : 'text-muted'}>{h ?? '—'}</span>
+          <span className="text-line text-base">:</span>
+          <span className={a! > h! ? 'text-primary' : 'text-muted'}>{a ?? '—'}</span>
         </div>
-        <div className="flex flex-1 items-center justify-end gap-2 truncate">
-          <span className="truncate text-sm font-semibold">{m.awayTeam.shortName}</span>
-          <img src={m.awayTeam.crest} alt="" className="h-6 w-6 object-contain" />
+        {/* Away */}
+        <div className="flex flex-1 items-center justify-end gap-2 overflow-hidden">
+          <span className="truncate text-sm font-semibold text-primary">{m.awayTeam.shortName}</span>
+          <img src={m.awayTeam.crest} alt="" className="h-7 w-7 object-contain" />
         </div>
       </div>
-      <div className="mt-2 text-xs text-muted text-center">{formatMatchDate(m.utcDate)}</div>
+      <p className="mt-3 text-center text-xs text-muted">{formatMatchDate(m.utcDate)}</p>
     </div>
   )
 }

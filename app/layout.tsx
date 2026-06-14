@@ -1,77 +1,178 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { ThemeProvider } from '@/components/ThemeProvider'
+import { ThemeToggle } from '@/components/ThemeToggle'
+import NavLinks from '@/components/NavLinks'
 import './globals.css'
 
 export const metadata: Metadata = {
   title: 'DK26 Simüle — 2026 FIFA Dünya Kupası',
-  description: '2026 FIFA Dünya Kupası canlı sonuçları, puan durumları ve simülatörü. Hangi takım şampiyon olur? Şimdi simüle et!',
-  keywords: ['dünya kupası 2026', 'FIFA WC2026', 'simülatör', 'tahmin', 'grup puan durumu'],
+  description: '2026 FIFA Dünya Kupası canlı sonuçları, puan durumları ve simülatörü. Hangi takım şampiyon olur?',
+  keywords: ['dünya kupası 2026', 'FIFA WC2026', 'simülatör', 'tahmin', 'puan durumu'],
   openGraph: {
-    title: 'DK26 Simüle — 2026 FIFA Dünya Kupası Simülatörü',
-    description: 'Dünya Kupası 2026 gruplarını, elemeleri ve şampiyonu simüle et.',
+    title: 'DK26 Simüle — 2026 Dünya Kupası Simülatörü',
+    description: 'Grupları, elemeleri ve şampiyonu kendin simüle et.',
     siteName: 'DK26 Simüle by RakuApp',
   },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="tr">
+    <html lang="tr" data-theme="dark" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+        {/* Prevent theme flash before React hydrates */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=localStorage.getItem('dk26-theme')||'dark';document.documentElement.setAttribute('data-theme',t)})()`,
+          }}
+        />
       </head>
       <body>
-        <nav className="sticky top-0 z-50 border-b border-border bg-bg/95 backdrop-blur-sm">
-          <div className="mx-auto flex max-w-6xl items-center gap-1 px-4 py-0">
-            {/* Logo */}
-            <Link href="/" className="mr-4 flex items-center gap-2 py-3">
-              <span className="text-xl">🏆</span>
-              <span className="font-bold text-white text-sm tracking-tight">DK<span className="text-accent">26</span> Simüle</span>
-            </Link>
+        <ThemeProvider>
+          {/* ── Navigation ─────────────────────────────────── */}
+          <header className="sticky top-0 z-50 border-b border-line/60 bg-bg/90 backdrop-blur-md">
+            <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
+              {/* Logo */}
+              <Link href="/" className="flex items-center gap-2.5 shrink-0">
+                <TrophySVG className="h-7 w-auto text-gold" />
+                <span className="text-sm font-bold tracking-tight text-primary">
+                  DK<span className="text-accent">26</span>
+                  <span className="ml-1 font-semibold text-muted">Simüle</span>
+                </span>
+              </Link>
 
-            {/* Nav links */}
-            <NavLink href="/">📊 Canlı & Gruplar</NavLink>
-            <NavLink href="/simule">🎲 Simülatör</NavLink>
+              {/* Center nav */}
+              <div className="flex-1 flex justify-center">
+                <NavLinks />
+              </div>
 
-            <div className="ml-auto flex items-center gap-2">
-              <a
-                href="https://rakuapp.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-full bg-card border border-border px-3 py-1 text-xs font-semibold text-muted hover:text-white hover:border-accent/50 transition-all"
-              >
-                by RakuApp
-              </a>
+              {/* Right controls */}
+              <div className="flex items-center gap-2 shrink-0">
+                <ThemeToggle />
+                <a
+                  href="https://rakuapp.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hidden sm:flex items-center gap-1.5 rounded-full border border-line px-3 py-1 text-xs font-semibold text-muted transition-all hover:border-accent/50 hover:text-primary"
+                >
+                  <RakuDot />
+                  RakuApp
+                </a>
+              </div>
             </div>
-          </div>
-        </nav>
-        <main>{children}</main>
-        <footer className="mt-20 border-t border-border py-10 text-center text-xs text-muted">
-          <div className="mx-auto max-w-4xl px-4">
-            <div className="mb-4 flex flex-wrap items-center justify-center gap-4">
-              <a href="https://rakuapp.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">RakuApp</a>
-              <span>·</span>
-              <a href="https://biroluruz.vercel.app" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">#biroluruz Tahmin Oyunu</a>
-              <span>·</span>
-              <a href="https://kafi-nu.vercel.app" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Kafi Coffee</a>
+          </header>
+
+          {/* ── Page content ───────────────────────────────── */}
+          <main>{children}</main>
+
+          {/* ── Footer ─────────────────────────────────────── */}
+          <footer className="mt-24 border-t border-line/50 py-12">
+            <div className="mx-auto max-w-6xl px-6">
+              <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <TrophySVG className="h-6 w-auto text-gold opacity-60" />
+                  <div>
+                    <p className="text-sm font-bold text-primary">DK26 Simüle</p>
+                    <p className="text-xs text-muted">
+                      <a
+                        href="https://rakuapp.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-accent transition-colors"
+                      >
+                        RakuApp
+                      </a>{' '}
+                      tarafından yapıldı
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted">
+                  <a
+                    href="https://biroluruz.vercel.app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary transition-colors"
+                  >
+                    #biroluruz Tahmin Oyunu
+                  </a>
+                  <a
+                    href="https://kafi-nu.vercel.app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary transition-colors"
+                  >
+                    Kafi Coffee
+                  </a>
+                  <span className="text-muted/40">
+                    Veri: football-data.org
+                  </span>
+                </div>
+              </div>
             </div>
-            <p className="opacity-60">© 2026 DK26 Simüle — <span className="text-accent font-semibold">RakuApp</span> tarafından yapıldı</p>
-            <p className="mt-1 opacity-40">Veriler football-data.org API'sinden alınmaktadır · Simüle edilen sonuçlar gerçeği yansıtmaz</p>
-          </div>
-        </footer>
+          </footer>
+        </ThemeProvider>
       </body>
     </html>
   )
 }
 
-function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+/* ── Custom SVG Components ───────────────────────────────── */
+
+function TrophySVG({ className }: { className?: string }) {
   return (
-    <Link
-      href={href}
-      className="rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-card hover:text-white"
+    <svg
+      viewBox="0 0 30 38"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
     >
-      {children}
-    </Link>
+      {/* Top rim */}
+      <rect x="4.5" y="1" width="21" height="4" rx="2" fill="currentColor" />
+      {/* Cup body */}
+      <path
+        d="M5 5 L5 22 Q5 30 15 31.5 Q25 30 25 22 L25 5 Z"
+        fill="currentColor"
+        fillOpacity="0.92"
+      />
+      {/* Globe overlay on cup */}
+      <circle cx="15" cy="18" r="6.5" stroke="rgba(0,0,0,0.18)" strokeWidth="0.9" fill="none" />
+      <ellipse cx="15" cy="18" rx="3.8" ry="6.5" stroke="rgba(0,0,0,0.18)" strokeWidth="0.9" fill="none" />
+      <line x1="8.5" y1="18" x2="21.5" y2="18" stroke="rgba(0,0,0,0.18)" strokeWidth="0.9" />
+      {/* Left handle */}
+      <path
+        d="M5 8 C2.2 8 0.5 10.2 0.5 13.5 C0.5 16.8 2.2 19 5 19"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        fill="none"
+      />
+      {/* Right handle */}
+      <path
+        d="M25 8 C27.8 8 29.5 10.2 29.5 13.5 C29.5 16.8 27.8 19 25 19"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        fill="none"
+      />
+      {/* Stem */}
+      <rect x="12" y="31.5" width="6" height="4" rx="1" fill="currentColor" />
+      {/* Base */}
+      <rect x="7" y="35.5" width="16" height="3" rx="1.5" fill="currentColor" fillOpacity="0.85" />
+    </svg>
+  )
+}
+
+function RakuDot() {
+  return (
+    <svg width="6" height="6" viewBox="0 0 6 6" aria-hidden="true">
+      <circle cx="3" cy="3" r="3" fill="rgb(var(--c-accent))" />
+    </svg>
   )
 }

@@ -2,22 +2,62 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { --font-inter: 'Inter', sans-serif; }
-
-html, body {
-  background: #080c18;
-  color: #f1f5f9;
-  font-family: Inter, system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+/* ── Dark theme (default) ─────────────────────────────── */
+:root {
+  --c-bg:       7 9 18;
+  --c-card:     11 14 26;
+  --c-raised:   17 22 40;
+  --c-line:     26 38 64;
+  --c-text:     232 240 255;
+  --c-muted:    78 97 134;
+  --c-accent:   59 130 246;
+  --c-gold:     245 158 11;
+  --c-positive: 34 197 94;
+  --c-shine:    255 255 255;
 }
 
-/* Custom scrollbar */
+/* ── Light theme ──────────────────────────────────────── */
+[data-theme="light"] {
+  --c-bg:       238 243 252;
+  --c-card:     255 255 255;
+  --c-raised:   247 250 254;
+  --c-line:     213 224 242;
+  --c-text:     10 14 30;
+  --c-muted:    98 116 154;
+  --c-accent:   37 99 235;
+  --c-gold:     180 83 9;
+  --c-positive: 22 163 74;
+  --c-shine:    0 0 0;
+}
+
+/* ── Base ─────────────────────────────────────────────── */
+html {
+  color-scheme: dark;
+}
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+html, body {
+  background-color: rgb(var(--c-bg));
+  color: rgb(var(--c-text));
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 180ms;
+  transition-timing-function: ease;
+}
+
+/* Scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #1a2540; border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: #2a3a5c; }
+::-webkit-scrollbar-thumb { background: rgb(var(--c-line)); border-radius: 9999px; }
 
-/* Hide number input arrows */
+/* Remove number arrows */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 input[type=number] { -moz-appearance: textfield; }

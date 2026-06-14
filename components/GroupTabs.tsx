@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Match, StandingGroup, StandingsRow } from '@/lib/types'
 import { formatMatchDate, statusLabel } from '@/lib/utils'
 
-const GROUP_KEYS = ['A','B','C','D','E','F','G','H','I','J','K','L']
+const GROUPS = ['A','B','C','D','E','F','G','H','I','J','K','L']
 
 interface Props {
   matches: Match[]
@@ -17,31 +17,29 @@ export default function GroupTabs({ matches, standings }: Props) {
   const standingMap: Record<string, StandingsRow[]> = {}
   standings.forEach(s => {
     if (s.group) {
-      const key = s.group.replace('GROUP_', '')
-      standingMap[key] = s.table
+      standingMap[s.group.replace('GROUP_', '')] = s.table
     }
   })
 
   const groupMatches = matches.filter(
     m => m.stage === 'GROUP_STAGE' && m.group === `GROUP_${active}`
   )
-
-  const finished   = groupMatches.filter(m => m.status === 'FINISHED')
-  const upcoming   = groupMatches.filter(m => m.status !== 'FINISHED')
-  const rows       = standingMap[active] ?? []
+  const finished = groupMatches.filter(m => m.status === 'FINISHED').slice().reverse()
+  const upcoming = groupMatches.filter(m => m.status !== 'FINISHED')
+  const rows = standingMap[active] ?? []
 
   return (
     <div>
-      {/* Group tab buttons */}
+      {/* Group selector */}
       <div className="mb-6 flex flex-wrap gap-1.5">
-        {GROUP_KEYS.map(g => (
+        {GROUPS.map(g => (
           <button
             key={g}
             onClick={() => setActive(g)}
             className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-all ${
               active === g
-                ? 'bg-accent text-white shadow-md shadow-accent/20'
-                : 'border border-border bg-card text-muted hover:border-accent/40 hover:text-white'
+                ? 'bg-accent text-white shadow-sm'
+                : 'border border-line bg-card text-muted hover:border-accent/40 hover:text-primary'
             }`}
           >
             Grup {g}
@@ -49,150 +47,190 @@ export default function GroupTabs({ matches, standings }: Props) {
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">
         {/* Standings */}
-        <div>
-          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">Puan Durumu</h2>
+        <section>
+          <SectionLabel>Puan Durumu</SectionLabel>
           {rows.length > 0 ? (
-            <div className="overflow-hidden rounded-xl border border-border bg-card">
+            <div className="overflow-hidden rounded-xl border border-line bg-card shadow-sm">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border bg-white/[.02] text-xs text-muted">
-                    <th className="py-2 pl-4 text-left font-semibold">#</th>
-                    <th className="py-2 text-left font-semibold">Takım</th>
-                    <th className="py-2 text-center font-semibold">O</th>
-                    <th className="py-2 text-center font-semibold">G</th>
-                    <th className="py-2 text-center font-semibold">B</th>
-                    <th className="py-2 text-center font-semibold">M</th>
-                    <th className="py-2 text-center font-semibold">Av</th>
-                    <th className="py-2 pr-4 text-center font-semibold text-gold">P</th>
+                  <tr className="border-b border-line bg-raised/60">
+                    <th className="py-2.5 pl-4 text-left text-xs font-semibold uppercase tracking-wider text-muted">#</th>
+                    <th className="py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted">Takım</th>
+                    {['O','G','B','M','Av','P'].map(h => (
+                      <th key={h} className={`py-2.5 text-center text-xs font-semibold uppercase tracking-wider ${h === 'P' ? 'pr-4 text-gold' : 'text-muted'}`}>{h}</th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-line/50">
                   {rows.map((row, i) => (
-                    <tr key={row.team.id} className="border-b border-white/[.03] last:border-0 hover:bg-white/[.02] transition-colors">
-                      <td className="py-2.5 pl-4 text-sm">
-                        <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${
-                          i < 2 ? 'bg-accent text-white' : i === 2 ? 'bg-gold text-black' : 'bg-border text-muted'
-                        }`}>{row.position}</span>
+                    <tr key={row.team.id} className="group transition-colors hover:bg-raised/40">
+                      <td className="py-3 pl-4">
+                        <PosBadge pos={i + 1} />
                       </td>
-                      <td className="py-2.5">
-                        <div className="flex items-center gap-2">
-                          <img src={row.team.crest} alt="" className="h-5 w-5 object-contain" />
-                          <span className="text-sm font-medium">{row.team.shortName}</span>
+                      <td className="py-3">
+                        <div className="flex items-center gap-2.5">
+                          <img
+                            src={row.team.crest}
+                            alt={row.team.shortName}
+                            className="h-5 w-5 object-contain"
+                          />
+                          <span className="text-sm font-medium text-primary">{row.team.shortName}</span>
                         </div>
                       </td>
-                      <td className="py-2.5 text-center text-sm text-muted">{row.playedGames}</td>
-                      <td className="py-2.5 text-center text-sm text-muted">{row.won}</td>
-                      <td className="py-2.5 text-center text-sm text-muted">{row.draw}</td>
-                      <td className="py-2.5 text-center text-sm text-muted">{row.lost}</td>
-                      <td className="py-2.5 text-center text-sm text-muted">
+                      <td className="py-3 text-center text-sm text-muted">{row.playedGames}</td>
+                      <td className="py-3 text-center text-sm text-muted">{row.won}</td>
+                      <td className="py-3 text-center text-sm text-muted">{row.draw}</td>
+                      <td className="py-3 text-center text-sm text-muted">{row.lost}</td>
+                      <td className="py-3 text-center text-sm text-muted">
                         {row.goalDifference > 0 ? `+${row.goalDifference}` : row.goalDifference}
                       </td>
-                      <td className="py-2.5 pr-4 text-center font-bold text-gold">{row.points}</td>
+                      <td className="py-3 pr-4 text-center text-sm font-bold text-gold">{row.points}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <div className="border-t border-border px-4 py-2 text-xs text-muted">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-accent"></span>İlk 2 → Eleme turuna geçer
-                </span>
-                <span className="ml-4 inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-gold"></span>3. sıra → Play-off şansı
-                </span>
+              {/* Legend */}
+              <div className="flex flex-wrap gap-4 border-t border-line/50 px-4 py-2.5">
+                <Legend color="bg-positive" label="İlk 2 → Eleme" />
+                <Legend color="bg-gold" label="3. sıra → Play-off şansı" />
               </div>
             </div>
           ) : (
-            <EmptyCard message="Puan durumu henüz yok" />
+            <EmptyState text="Puan durumu henüz yok" />
           )}
-        </div>
+        </section>
 
-        {/* Matches */}
-        <div>
-          {/* Upcoming */}
+        {/* Match schedule */}
+        <section>
           {upcoming.length > 0 && (
             <div className="mb-6">
-              <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">Yaklaşan Maçlar</h2>
-              <div className="flex flex-col gap-2">
-                {upcoming.map(m => <MatchRow key={m.id} match={m} />)}
-              </div>
+              <SectionLabel>Yaklaşan Maçlar</SectionLabel>
+              <MatchList matches={upcoming} />
             </div>
           )}
-
-          {/* Finished */}
           {finished.length > 0 && (
             <div>
-              <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">Biten Maçlar</h2>
-              <div className="flex flex-col gap-2">
-                {finished.slice().reverse().map(m => <MatchRow key={m.id} match={m} />)}
-              </div>
+              <SectionLabel>Biten Maçlar</SectionLabel>
+              <MatchList matches={finished} />
             </div>
           )}
-
           {groupMatches.length === 0 && (
-            <EmptyCard message="Bu grup için maç verisi henüz yok" />
+            <EmptyState text="Bu grup için maç verisi henüz yok" />
           )}
-        </div>
+        </section>
       </div>
+    </div>
+  )
+}
+
+/* ── Sub-components ──────────────────────────────────────── */
+
+function PosBadge({ pos }: { pos: number }) {
+  const cls =
+    pos <= 2
+      ? 'bg-positive/15 text-positive ring-1 ring-positive/30'
+      : pos === 3
+      ? 'bg-gold/15 text-gold ring-1 ring-gold/30'
+      : 'bg-raised text-muted'
+  return (
+    <span
+      className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${cls}`}
+    >
+      {pos}
+    </span>
+  )
+}
+
+function Legend({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1.5 text-xs text-muted">
+      <span className={`h-2 w-2 rounded-full ${color} opacity-70`} />
+      {label}
+    </span>
+  )
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
+      {children}
+    </p>
+  )
+}
+
+function MatchList({ matches }: { matches: Match[] }) {
+  return (
+    <div className="flex flex-col gap-2">
+      {matches.map(m => <MatchRow key={m.id} match={m} />)}
     </div>
   )
 }
 
 function MatchRow({ match: m }: { match: Match }) {
   const { text, cls } = statusLabel(m.status)
-  const isFinished = m.status === 'FINISHED'
-  const hScore = m.score.fullTime.home
-  const aScore = m.score.fullTime.away
-  const hasScore = hScore !== null && aScore !== null
+  const done = m.status === 'FINISHED'
+  const h = m.score.fullTime.home
+  const a = m.score.fullTime.away
+  const hasScore = h !== null && a !== null
 
   return (
-    <div className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
-      isFinished ? 'border-border bg-card/60' : 'border-border bg-card hover:border-accent/30'
-    }`}>
-      {/* Date / status */}
-      <div className="w-20 flex-shrink-0 text-xs text-center">
-        {isFinished
-          ? <span className="text-muted">{formatMatchDate(m.utcDate).split(',')[0]}</span>
-          : <span className={cls}>{text === 'Planlandı' ? formatMatchDate(m.utcDate) : text}</span>
-        }
-      </div>
-
-      {/* Home */}
-      <div className="flex flex-1 items-center justify-end gap-2 truncate">
-        <span className="truncate text-sm font-semibold">{m.homeTeam.shortName}</span>
-        <img src={m.homeTeam.crest} alt="" className="h-6 w-6 flex-shrink-0 object-contain" />
-      </div>
-
-      {/* Score */}
-      <div className="flex w-16 flex-shrink-0 items-center justify-center gap-1 text-base font-bold">
-        {hasScore ? (
-          <>
-            <span className={hScore! > aScore! ? 'text-white' : 'text-muted'}>{hScore}</span>
-            <span className="text-border">:</span>
-            <span className={aScore! > hScore! ? 'text-white' : 'text-muted'}>{aScore}</span>
-          </>
+    <div
+      className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
+        done
+          ? 'border-line/60 bg-card/50'
+          : 'border-line bg-card hover:border-accent/30'
+      }`}
+    >
+      {/* Time / status */}
+      <div className="w-[72px] shrink-0 text-center">
+        {done ? (
+          <span className="text-xs text-muted">{formatMatchDate(m.utcDate).split(',')[0]}</span>
         ) : (
-          <span className="text-muted text-xs">{formatMatchDate(m.utcDate).split(',').pop()?.trim()}</span>
+          <span className={`text-xs font-semibold ${cls}`}>
+            {text === 'Planlandı' ? formatMatchDate(m.utcDate) : text}
+          </span>
         )}
       </div>
 
-      {/* Away */}
-      <div className="flex flex-1 items-center gap-2 truncate">
-        <img src={m.awayTeam.crest} alt="" className="h-6 w-6 flex-shrink-0 object-contain" />
-        <span className="truncate text-sm font-semibold">{m.awayTeam.shortName}</span>
+      {/* Home team */}
+      <div className="flex flex-1 items-center justify-end gap-2 overflow-hidden">
+        <span className="truncate text-sm font-semibold text-primary">{m.homeTeam.shortName}</span>
+        <img src={m.homeTeam.crest} alt="" className="h-6 w-6 shrink-0 object-contain" />
+      </div>
+
+      {/* Score */}
+      <div className="flex w-14 shrink-0 items-center justify-center gap-1 font-mono text-base font-bold">
+        {hasScore ? (
+          <>
+            <span className={h! > a! ? 'text-primary' : 'text-muted'}>{h}</span>
+            <span className="text-line">:</span>
+            <span className={a! > h! ? 'text-primary' : 'text-muted'}>{a}</span>
+          </>
+        ) : (
+          <span className="text-xs text-muted font-sans font-normal">
+            {formatMatchDate(m.utcDate).split(',').pop()?.trim()}
+          </span>
+        )}
+      </div>
+
+      {/* Away team */}
+      <div className="flex flex-1 items-center gap-2 overflow-hidden">
+        <img src={m.awayTeam.crest} alt="" className="h-6 w-6 shrink-0 object-contain" />
+        <span className="truncate text-sm font-semibold text-primary">{m.awayTeam.shortName}</span>
       </div>
 
       {/* Matchday */}
-      <div className="w-6 flex-shrink-0 text-center text-xs text-muted">{m.matchday}</div>
+      <span className="w-5 shrink-0 text-center text-xs text-muted">{m.matchday}</span>
     </div>
   )
 }
 
-function EmptyCard({ message }: { message: string }) {
+function EmptyState({ text }: { text: string }) {
   return (
-    <div className="rounded-xl border border-border bg-card px-6 py-8 text-center text-sm text-muted">
-      {message}
+    <div className="rounded-xl border border-line bg-card px-6 py-10 text-center text-sm text-muted">
+      {text}
     </div>
   )
 }
