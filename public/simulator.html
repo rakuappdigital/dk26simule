@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026 FIFA Dünya Kupası Simülatörü</title>
+  <style>
+    :root {
+      --bg:#0a0e1a;--card:#111827;--border:#1f2937;
+      --green:#10b981;--yellow:#f59e0b;--text:#f3f4f6;
+      --muted:#6b7280;--gold:#fbbf24;--red:#ef4444;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;}
+
+    header{background:linear-gradient(135deg,#0f172a,#1a3a5c);border-bottom:1px solid #1e3a5f;padding:14px 20px;display:flex;align-items:center;gap:12px;}
+    header h1{font-size:1.2rem;font-weight:700;color:var(--gold);}
+    header p{font-size:.75rem;color:var(--muted);margin-top:2px;}
+    .trophy{font-size:1.8rem;}
+
+    /* Sim bar */
+    .sim-bar{background:rgba(16,185,129,.04);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+    .sim-btn{padding:7px 18px;border-radius:20px;font-size:.85rem;font-weight:700;cursor:pointer;border:none;transition:all .15s;}
+    .sim-btn.run{background:var(--green);color:#fff;}
+    .sim-btn.run:hover{background:#059669;}
+    .sim-btn.dirty{background:var(--yellow);color:#000;}
+    .sim-btn.dirty:hover{background:#d97706;}
+    .sim-hint{font-size:.75rem;color:var(--muted);}
+    .sim-legend{display:flex;gap:10px;margin-left:auto;}
+    .sim-dot{display:flex;align-items:center;gap:4px;font-size:.72rem;color:var(--muted);}
+    .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+    .dot-sim{background:var(--yellow);}
+    .dot-user{background:#60a5fa;}
+    .dot-real{background:var(--green);}
+
+    /* Tabs */
+    .main-tabs{display:flex;gap:4px;padding:10px 14px;overflow-x:auto;border-bottom:1px solid var(--border);background:var(--card);scrollbar-width:none;}
+    .main-tabs::-webkit-scrollbar{display:none;}
+    .tab{padding:5px 13px;border-radius:20px;font-size:.82rem;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--muted);white-space:nowrap;transition:all .15s;}
+    .tab:hover{color:var(--text);background:var(--border);}
+    .tab.active{background:var(--green);color:#fff;}
+    .tab.ko-tab.active{background:var(--gold);color:#000;}
+
+    .content{max-width:900px;margin:0 auto;padding:16px;}
+    .view{display:none;}
+    .view.active{display:block;}
+
+    .section-title{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px;margin-top:20px;}
+    .section-title:first-child{margin-top:0;}
+
+    /* Standings */
+    .standings{background:var(--card);border-radius:12px;overflow:hidden;border:1px solid var(--border);}
+    .standings table{width:100%;border-collapse:collapse;}
+    .standings thead th{padding:8px 10px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:center;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border);}
+    .standings thead th:first-child{text-align:left;padding-left:14px;}
+    .standings tbody tr{border-bottom:1px solid rgba(255,255,255,.04);}
+    .standings tbody tr:last-child{border-bottom:none;}
+    .standings tbody tr:hover{background:rgba(255,255,255,.03);}
+    .standings tbody td{padding:10px;font-size:.875rem;text-align:center;}
+    .standings tbody td:first-child{text-align:left;padding-left:14px;}
+    .team-cell{display:flex;align-items:center;gap:8px;}
+    .team-pos{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;flex-shrink:0;}
+    .pos-1,.pos-2{background:var(--green);color:#fff;}
+    .pos-3{background:var(--yellow);color:#000;}
+    .pos-4{background:var(--border);color:var(--muted);}
+    .pts-cell{font-weight:700;color:var(--gold);}
+
+    /* Match cards (group stage) */
+    .round-label{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:14px;margin-bottom:5px;}
+    .matches-grid{display:flex;flex-direction:column;gap:7px;}
+    .match-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:8px;}
+    .match-card.played{border-color:rgba(16,185,129,.2);}
+    .match-date{font-size:.68rem;color:var(--muted);width:44px;text-align:center;flex-shrink:0;}
+    .match-team{flex:1;display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:500;}
+    .match-team.away{justify-content:flex-end;flex-direction:row-reverse;}
+    .score-area{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+    .score-input{width:36px;height:36px;text-align:center;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;font-weight:700;outline:none;transition:border-color .15s,color .15s;-moz-appearance:textfield;}
+    .score-input::-webkit-inner-spin-button,.score-input::-webkit-outer-spin-button{-webkit-appearance:none;}
+    .score-input:focus{border-color:var(--green);}
+    .score-input:disabled{background:rgba(16,185,129,.06);border-color:rgba(16,185,129,.3);color:var(--green);cursor:not-allowed;}
+    .score-input.sim{color:var(--yellow);border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.04);}
+    .score-input.usr{color:#60a5fa;border-color:rgba(96,165,250,.35);background:rgba(96,165,250,.04);}
+    .score-sep{color:var(--muted);font-weight:700;font-size:1rem;}
+    .played-badge{font-size:.62rem;background:rgba(16,185,129,.12);color:var(--green);border-radius:4px;padding:2px 5px;white-space:nowrap;flex-shrink:0;}
+    .sim-badge{font-size:.62rem;background:rgba(245,158,11,.12);color:var(--yellow);border-radius:4px;padding:2px 5px;white-space:nowrap;flex-shrink:0;}
+    .usr-badge{font-size:.62rem;background:rgba(96,165,250,.12);color:#60a5fa;border-radius:4px;padding:2px 5px;white-space:nowrap;flex-shrink:0;}
+    .controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+    .group-title{font-size:1.05rem;font-weight:700;}
+    .reset-btn{background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:5px 13px;font-size:.78rem;font-weight:600;cursor:pointer;}
+    .reset-btn:hover{background:rgba(239,68,68,.18);}
+
+    /* Thirds */
+    .thirds-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+    .thirds-header{padding:9px 14px;background:rgba(245,158,11,.08);border-bottom:1px solid var(--border);font-size:.8rem;font-weight:700;color:var(--yellow);}
+    .thirds-table{width:100%;border-collapse:collapse;}
+    .thirds-table th,.thirds-table td{padding:8px 10px;font-size:.8rem;text-align:center;}
+    .thirds-table th{font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);}
+    .thirds-table th:nth-child(3),.thirds-table td:nth-child(3){text-align:left;}
+    .thirds-table tr{border-bottom:1px solid rgba(255,255,255,.04);}
+    .thirds-table tr:last-child{border-bottom:none;}
+    .advances{color:var(--yellow);font-weight:600;}
+    .elim{color:var(--muted);}
+
+    /* Knockout header */
+    .ko-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;}
+    .ko-title{font-size:1.05rem;font-weight:700;}
+    .reset-ko-btn{background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:6px 13px;font-size:.78rem;font-weight:600;cursor:pointer;}
+    .ko-info{font-size:.78rem;color:var(--muted);margin-bottom:12px;padding:8px 12px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;}
+
+    /* Champion */
+    .champion-box{background:linear-gradient(135deg,rgba(251,191,36,.15),rgba(251,191,36,.05));border:1px solid rgba(251,191,36,.3);border-radius:16px;padding:20px;text-align:center;margin-bottom:16px;}
+    .champ-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold);margin-bottom:8px;}
+    .champ-flag{font-size:2.5rem;display:block;margin-bottom:6px;}
+    .champ-team{font-size:2rem;font-weight:800;}
+
+    /* ===== BRACKET TREE ===== */
+    .bk-scroll{overflow-x:auto;overflow-y:hidden;border:1px solid var(--border);border-radius:12px;background:var(--card);}
+    .bk-outer{padding:36px 16px 20px;position:relative;width:fit-content;min-width:100%;}
+
+    /* Round header labels */
+    .bk-rnames{position:absolute;top:8px;left:0;display:flex;pointer-events:none;}
+    .bk-rname{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:center;}
+
+    /* Bracket inner container */
+    .bk-inner{position:relative;}
+
+    /* Match card */
+    .bk-card{position:absolute;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg);box-sizing:border-box;}
+    .bk-card.final-card{border-color:rgba(251,191,36,.4);background:rgba(251,191,36,.04);}
+
+    /* Team row inside bracket card */
+    .bk-team{display:flex;align-items:center;gap:5px;padding:0 7px;cursor:pointer;border:none;background:transparent;color:var(--text);width:100%;font-size:.75rem;font-family:inherit;text-align:left;transition:background .12s;}
+    .bk-team:hover:not(:disabled){background:rgba(255,255,255,.06);}
+    .bk-team:disabled{cursor:default;}
+    .bk-team.bk-tbd{color:var(--muted);font-size:.68rem;justify-content:center;font-style:italic;}
+    .bk-team.bk-win{background:rgba(16,185,129,.14)!important;color:var(--green);font-weight:700;}
+    .bk-team.bk-lose{opacity:.3;}
+    .bk-badge{font-size:.56rem;font-weight:800;background:rgba(255,255,255,.08);border-radius:3px;padding:1px 4px;white-space:nowrap;flex-shrink:0;color:var(--muted);letter-spacing:.03em;}
+    .bk-team.bk-win .bk-badge{background:rgba(16,185,129,.2);color:var(--green);}
+    .bk-flag{font-size:.9rem;flex-shrink:0;line-height:1;}
+    .bk-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
+    .bk-check{margin-left:auto;flex-shrink:0;color:var(--green);font-size:.7rem;}
+    .bk-divider{height:1px;background:var(--border);}
+
+    @media(max-width:560px){
+      .tname{display:none;}
+      .match-team{justify-content:center;}
+      .match-team.away{flex-direction:row;}
+      .score-input{width:32px;height:32px;font-size:.9rem;}
+      .sim-legend{display:none;}
+    }
+    footer{text-align:center;padding:20px;font-size:.72rem;color:var(--muted);border-top:1px solid var(--border);margin-top:30px;}
+  </style>
+</head>
+<body>
+<header>
+  <span class="trophy">🏆</span>
+  <div>
+    <h1>2026 FIFA Dünya Kupası Simülatörü</h1>
+    <p>Gerçek sonuçlar yüklü · Grup aşaması + Eleme turları · 14 Haziran 2026</p>
+  </div>
+</header>
+
+<div class="sim-bar">
+  <button id="simBtn" class="sim-btn run" onclick="handleSimBtn()">🎲 Simüle Et</button>
+  <span class="sim-hint" id="simHint">Oynanmamış tüm maçları rastgele skora doldurur ve bracket'ı oluşturur.</span>
+  <div class="sim-legend">
+    <div class="sim-dot"><div class="dot dot-real"></div>Gerçek</div>
+    <div class="sim-dot"><div class="dot dot-sim"></div>Simüle</div>
+    <div class="sim-dot"><div class="dot dot-user"></div>Sen değiştirdin</div>
+  </div>
+</div>
+
+<div class="main-tabs" id="mainTabs"></div>
+
+<div class="content">
+  <div id="groupViews"></div>
+
+  <div id="thirdsSection" style="display:none;margin-top:24px;">
+    <p class="section-title">3. Sıralar — En İyi 8'i Bulunuz</p>
+    <div class="thirds-panel">
+      <div class="thirds-header">🥉 Grupların 3. Sıra Takımları · En iyi 8'i ilerler</div>
+      <table class="thirds-table">
+        <thead><tr><th>#</th><th>Grup</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>Av</th><th>P</th><th>Durum</th></tr></thead>
+        <tbody id="thirdsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- KNOCKOUT VIEW -->
+  <div id="view-KO" class="view">
+    <div class="ko-header">
+      <span class="ko-title">🏆 Eleme Aşaması</span>
+      <button class="reset-ko-btn" onclick="resetKnockout()">Kazanan Seçimlerini Sıfırla</button>
+    </div>
+    <div class="ko-info">
+      Grup simülasyonundan otomatik güncellenir. Her kutucukta kazananı seçmek için takıma tıkla.
+    </div>
+    <div id="championBox" style="display:none" class="champion-box">
+      <div class="champ-label">🥇 2026 Dünya Şampiyonu</div>
+      <span class="champ-flag" id="champFlag"></span>
+      <div class="champ-team" id="champName"></div>
+    </div>
+    <div class="bk-scroll">
+      <div class="bk-outer" id="bkOuter">
+        <div class="bk-rnames" id="bkRnames"></div>
+        <div class="bk-inner" id="bkInner"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>Yeşil=gerçek · Sarı=simüle · Mavi=sen değiştirdin · Simüle edilen sonuçlar gerçeği yansıtmaz</footer>
+
+<script>
+// ============================================================
+// GRUP VERİLERİ
+// ============================================================
+const GROUPS_ORIG = {
+  A:{name:'Grup A',teams:[{name:'Meksika',flag:'🇲🇽'},{name:'Güney Afrika',flag:'🇿🇦'},{name:'Güney Kore',flag:'🇰🇷'},{name:'Çekya',flag:'🇨🇿'}],
+    matches:[{r:1,h:0,a:1,hg:2,ag:0,played:true,date:'11 Haz'},{r:1,h:2,a:3,hg:2,ag:1,played:true,date:'11 Haz'},
+      {r:2,h:0,a:2,hg:null,ag:null,played:false,date:'18 Haz'},{r:2,h:1,a:3,hg:null,ag:null,played:false,date:'18 Haz'},
+      {r:3,h:0,a:3,hg:null,ag:null,played:false,date:'23 Haz'},{r:3,h:1,a:2,hg:null,ag:null,played:false,date:'23 Haz'}]},
+  B:{name:'Grup B',teams:[{name:'Kanada',flag:'🇨🇦'},{name:'Bosna Hersek',flag:'🇧🇦'},{name:'Katar',flag:'🇶🇦'},{name:'İsviçre',flag:'🇨🇭'}],
+    matches:[{r:1,h:0,a:1,hg:1,ag:1,played:true,date:'12 Haz'},{r:1,h:2,a:3,hg:1,ag:1,played:true,date:'13 Haz'},
+      {r:2,h:0,a:2,hg:null,ag:null,played:false,date:'17 Haz'},{r:2,h:1,a:3,hg:null,ag:null,played:false,date:'17 Haz'},
+      {r:3,h:0,a:3,hg:null,ag:null,played:false,date:'22 Haz'},{r:3,h:1,a:2,hg:null,ag:null,played:false,date:'22 Haz'}]},
+  C:{name:'Grup C',teams:[{name:'Brezilya',flag:'🇧🇷'},{name:'Fas',flag:'🇲🇦'},{name:'Haiti',flag:'🇭🇹'},{name:'İskoçya',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'}],
+    matches:[{r:1,h:0,a:1,hg:1,ag:1,played:true,date:'13 Haz'},{r:1,h:2,a:3,hg:0,ag:1,played:true,date:'14 Haz'},
+      {r:2,h:0,a:2,hg:null,ag:null,played:false,date:'18 Haz'},{r:2,h:1,a:3,hg:null,ag:null,played:false,date:'18 Haz'},
+      {r:3,h:0,a:3,hg:null,ag:null,played:false,date:'23 Haz'},{r:3,h:1,a:2,hg:null,ag:null,played:false,date:'23 Haz'}]},
+  D:{name:'Grup D',teams:[{name:'ABD',flag:'🇺🇸'},{name:'Paraguay',flag:'🇵🇾'},{name:'Avustralya',flag:'🇦🇺'},{name:'Türkiye',flag:'🇹🇷'}],
+    matches:[{r:1,h:0,a:1,hg:4,ag:1,played:true,date:'12 Haz'},
+      {r:1,h:2,a:3,hg:2,ag:0,played:true,date:'14 Haz'}, // Avustralya 2-0 Türkiye
+      {r:2,h:0,a:2,hg:null,ag:null,played:false,date:'19 Haz'},{r:2,h:1,a:3,hg:null,ag:null,played:false,date:'19 Haz'},
+      {r:3,h:0,a:3,hg:null,ag:null,played:false,date:'24 Haz'},{r:3,h:1,a:2,hg:null,ag:null,played:false,date:'24 Haz'}]},
+  E:{name:'Grup E',teams:[{name:'Almanya',flag:'🇩🇪'},{name:'Curaçao',flag:'🇨🇼'},{name:'Fildişi Sahili',flag:'🇨🇮'},{name:'Ekvador',flag:'🇪🇨'}],
+    matches:[{r:1,h:0,a:1,hg:null,ag:null,played:false,date:'15 Haz'},{r:1,h:2,a:3,hg:null,ag:null,played:false,date:'15 Haz'},
+      {r:2,h:0,a:2,hg:null,ag:null,played:false,date:'20 Haz'},{r:2,h:1,a:3,hg:null,ag:null,played:false,date:'20 Haz'},
+      {r:3,h:0,a:3,hg:null,ag:null,played:false,date:'24 Haz'},{r:3,h:1,a:2,hg:null,ag:null,played:false,date:'24 Haz'}]},
+  F:{name:'Grup F',teams:[{name:'Hollanda',flag:'🇳🇱'},{name:'Japonya',flag:'🇯🇵'},{name:'İsveç',flag:'🇸🇪'},{name:'Tunus',flag:'🇹🇳'}],
+    matches:[{r:1,h:0,a:1,hg:null,ag:null,played:false,date:'14 Haz'},{r:1,h:2,a:3,hg:null,ag:null,played:false,date:'14 Haz'},
+      {r:2,h:0,a:2,hg:null,ag:null,played:false,date:'19 Haz'},{r:2,h:1,a:3,hg:null,ag:null,played:false,date:'19 Haz'},
+      {r:3,h:0,a:3,hg:null,ag:null,played:false,date:'24 Haz'},{r:3,h:1,a:2,hg:null,ag:null,played:false,date:'24 Haz'}]},
+  G:{name:'Grup G',teams:[{name:'Belçika',flag:'🇧🇪'},{name:'Mısır',flag:'🇪🇬'},{name:'İran',flag:'🇮🇷'},{name:'Yeni Zelanda',flag:'🇳🇿'}],
+    matches:[{r:1,h:0,a:1,hg:null,ag:null,played:false,date:'15 Haz'},{r:1,h:2,a:3,hg:null,ag:null,played:false,date:'15 Haz'},
+      {r:2,h:0,a:2,hg:null,ag:null,played:false,date:'20 Haz'},{r:2,h:1,a:3,hg:null,ag:null,played:false,date:'20 Haz'},
+      {r:3,h:0,a:3,hg:null,ag:null,played:false,date:'25 Haz'},{r:3,h:1,a:2,hg:null,ag:null,played:false,date:'25 Haz'}]},
+  H:{name:'Grup H',teams:[{name:'İspanya',flag:'🇪🇸'},{name:'Yeşil Burun',flag:'🇨🇻'},{name:'Suudi Arabistan',flag:'🇸🇦'},{name:'Uruguay',flag:'🇺🇾'}],
+    matches:[{r:1,h:0,a:1,hg:null,ag:null,played:false,date:'15 Haz'},{r:1,h:2,a:3,hg:null,ag:null,played:false,date:'15 Haz'},
+      {r:2,h:0,a:2,hg:null,ag:null,played:false,date:'20 Haz'},{r:2,h:1,a:3,hg:null,ag:null,played:false,date:'20 Haz'},
+      {r:3,h:0,a:3,hg:null,ag:null,played:false,date:'25 Haz'},{r:3,h:1,a:2,hg:null,ag:null,played:false,date:'25 Haz'}]},
+  I:{name:'Grup I',teams:[{name:'Fransa',flag:'🇫🇷'},{name:'Senegal',flag:'🇸🇳'},{name:'Irak',flag:'🇮🇶'},{name:'Norveç',flag:'🇳🇴'}],
+    matches:[{r:1,h:0,a:1,hg:null,ag:null,played:false,date:'16 Haz'},{r:1,h:2,a:3,hg:null,ag:null,played:false,date:'16 Haz'},
+      {r:2,h:0,a:2,hg:null,ag:null,played:false,date:'21 Haz'},{r:2,h:1,a:3,hg:null,ag:null,played:false,date:'21 Haz'},
+      {r:3,h:0,a:3,hg:null,ag:null,played:false,date:'25 Haz'},{r:3,h:1,a:2,hg:null,ag:null,played:false,date:'25 Haz'}]},
+  J:{name:'Grup J',teams:[{name:'Arjantin',flag:'🇦🇷'},{name:'Cezayir',flag:'🇩🇿'},{name:'Avusturya',flag:'🇦🇹'},{name:'Ürdün',flag:'🇯🇴'}],
+    matches:[{r:1,h:0,a:1,hg:null,ag:null,played:false,date:'16 Haz'},{r:1,h:2,a:3,hg:null,ag:null,played:false,date:'16 Haz'},
+      {r:2,h:0,a:2,hg:null,ag:null,played:false,date:'21 Haz'},{r:2,h:1,a:3,hg:null,ag:null,played:false,date:'21 Haz'},
+      {r:3,h:0,a:3,hg:null,ag:null,played:false,date:'26 Haz'},{r:3,h:1,a:2,hg:null,ag:null,played:false,date:'26 Haz'}]},
+  K:{name:'Grup K',teams:[{name:'Portekiz',flag:'🇵🇹'},{name:'DR Kongo',flag:'🇨🇩'},{name:'Özbekistan',flag:'🇺🇿'},{name:'Kolombiya',flag:'🇨🇴'}],
+    matches:[{r:1,h:0,a:1,hg:null,ag:null,played:false,date:'17 Haz'},{r:1,h:2,a:3,hg:null,ag:null,played:false,date:'17 Haz'},
+      {r:2,h:0,a:2,hg:null,ag:null,played:false,date:'21 Haz'},{r:2,h:1,a:3,hg:null,ag:null,played:false,date:'21 Haz'},
+      {r:3,h:0,a:3,hg:null,ag:null,played:false,date:'26 Haz'},{r:3,h:1,a:2,hg:null,ag:null,played:false,date:'26 Haz'}]},
+  L:{name:'Grup L',teams:[{name:'İngiltere',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'Hırvatistan',flag:'🇭🇷'},{name:'Gana',flag:'🇬🇭'},{name:'Panama',flag:'🇵🇦'}],
+    matches:[{r:1,h:0,a:1,hg:null,ag:null,played:false,date:'17 Haz'},{r:1,h:2,a:3,hg:null,ag:null,played:false,date:'17 Haz'},
+      {r:2,h:0,a:2,hg:null,ag:null,played:false,date:'22 Haz'},{r:2,h:1,a:3,hg:null,ag:null,played:false,date:'22 Haz'},
+      {r:3,h:0,a:3,hg:null,ag:null,played:false,date:'26 Haz'},{r:3,h:1,a:2,hg:null,ag:null,played:false,date:'26 Haz'}]},
+};
+
+const state = JSON.parse(JSON.stringify(GROUPS_ORIG));
+const simSet = new Set(), userSet = new Set();
+let simDirty = false;
+
+// ============================================================
+// SİMÜLASYON
+// ============================================================
+function randomGoals(){const r=Math.random();return r<.28?0:r<.55?1:r<.76?2:r<.89?3:r<.96?4:5;}
+
+function handleSimBtn(){
+  for(const gk of Object.keys(GROUPS_ORIG)){
+    for(let i=0;i<GROUPS_ORIG[gk].matches.length;i++){
+      const key=`${gk}_${i}`;
+      if(GROUPS_ORIG[gk].matches[i].played||userSet.has(key))continue;
+      state[gk].matches[i].hg=randomGoals();
+      state[gk].matches[i].ag=randomGoals();
+      simSet.add(key);
+    }
+  }
+  simDirty=false;
+  rebuildAll();
+  generateBracket(true);
+  updateSimBtn();
+}
+
+function updateSimBtn(){
+  const btn=document.getElementById('simBtn');
+  const hint=document.getElementById('simHint');
+  if(simDirty||simSet.size>0){
+    btn.textContent='🔄 Tekrar Simüle Et';btn.className='sim-btn dirty';
+    hint.textContent='Kullanıcı değişiklikleri korunarak geri kalanlar yeniden simüle edilir.';
+  }else{
+    btn.textContent='🎲 Simüle Et';btn.className='sim-btn run';
+    hint.textContent="Oynanmamış tüm maçları rastgele skora doldurur ve bracket'ı oluşturur.";
+  }
+}
+
+function rebuildAll(){
+  for(const gk of Object.keys(GROUPS_ORIG)){buildGroupView(gk);renderStandings(gk);}
+  renderThirds();
+}
+
+// ============================================================
+// PUAN HESAPLAMA
+// ============================================================
+function calcStandings(gk){
+  const s=state[gk].teams.map((t,i)=>({idx:i,name:t.name,flag:t.flag,P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0}));
+  for(const m of state[gk].matches){
+    if(m.hg===null||m.ag===null)continue;
+    s[m.h].P++;s[m.a].P++;
+    s[m.h].GF+=m.hg;s[m.h].GA+=m.ag;
+    s[m.a].GF+=m.ag;s[m.a].GA+=m.hg;
+    if(m.hg>m.ag){s[m.h].W++;s[m.h].Pts+=3;s[m.a].L++;}
+    else if(m.hg<m.ag){s[m.a].W++;s[m.a].Pts+=3;s[m.h].L++;}
+    else{s[m.h].D++;s[m.h].Pts++;s[m.a].D++;s[m.a].Pts++;}
+  }
+  s.forEach(t=>t.GD=t.GF-t.GA);
+  return s.sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.name.localeCompare(b.name));
+}
+
+function renderStandings(gk){
+  const st=calcStandings(gk),tbody=document.getElementById(`tb-${gk}`);
+  if(!tbody)return;
+  tbody.innerHTML=st.map((t,pos)=>{
+    const cls=['pos-1','pos-2','pos-3','pos-4'][pos],gd=t.GD>0?`+${t.GD}`:t.GD;
+    return`<tr><td><div class="team-cell"><div class="team-pos ${cls}">${pos+1}</div><span>${t.flag}</span><span>${t.name}</span></div></td>
+      <td>${t.P}</td><td>${t.W}</td><td>${t.D}</td><td>${t.L}</td><td>${t.GF}</td><td>${t.GA}</td><td>${gd}</td>
+      <td class="pts-cell">${t.Pts}</td></tr>`;
+  }).join('');
+}
+
+function renderThirds(){
+  const thirds=[];
+  for(const gk of Object.keys(GROUPS_ORIG)){const st=calcStandings(gk);if(st[2]&&st[2].P>0)thirds.push({group:gk,...st[2]});}
+  thirds.sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.name.localeCompare(b.name));
+  const sec=document.getElementById('thirdsSection'),tbody=document.getElementById('thirdsBody');
+  if(thirds.length===0){sec.style.display='none';return;}
+  sec.style.display='block';
+  tbody.innerHTML=thirds.map((t,i)=>{
+    const adv=i<8,gd=t.GD>0?`+${t.GD}`:t.GD;
+    return`<tr><td class="${adv?'advances':'elim'}">${i+1}</td><td>${t.group}</td>
+      <td>${t.flag} ${t.name}</td><td>${t.P}</td><td>${t.W}</td><td>${t.D}</td><td>${t.L}</td>
+      <td>${t.GF}</td><td>${gd}</td><td class="${adv?'advances pts-cell':'elim'}">${t.Pts}</td>
+      <td class="${adv?'advances':'elim'}">${adv?'✅ İlerler':'❌ Elenir'}</td></tr>`;
+  }).join('');
+}
+
+function onScore(gk,idx,side,val){
+  const key=`${gk}_${idx}`,m=state[gk].matches[idx];
+  const n=val===''?null:Math.max(0,parseInt(val,10)||0);
+  if(side==='h')m.hg=n;else m.ag=n;
+  if(simSet.has(key)||simSet.size>0){userSet.add(key);simSet.delete(key);simDirty=true;updateSimBtn();}
+  renderStandings(gk);renderThirds();
+}
+
+function resetGroup(gk){
+  GROUPS_ORIG[gk].matches.forEach((orig,i)=>{
+    if(!orig.played){
+      state[gk].matches[i].hg=null;state[gk].matches[i].ag=null;
+      const key=`${gk}_${i}`;simSet.delete(key);userSet.delete(key);
+    }
+  });
+  buildGroupView(gk);renderStandings(gk);renderThirds();updateSimBtn();
+}
+
+function buildGroupView(gk){
+  const group=state[gk],orig=GROUPS_ORIG[gk],el=document.getElementById(`g-${gk}`);
+  const rounds={};
+  group.matches.forEach((m,idx)=>{if(!rounds[m.r])rounds[m.r]=[];rounds[m.r].push({...m,idx});});
+  let html='';
+  for(const [r,ms] of Object.entries(rounds)){
+    html+=`<div class="round-label">Hafta ${r}</div>`;
+    for(const m of ms){
+      const ht=group.teams[m.h],at=group.teams[m.a],key=`${gk}_${m.idx}`;
+      const locked=orig.matches[m.idx].played,isSim=simSet.has(key),isUsr=userSet.has(key);
+      const hv=m.hg!==null?m.hg:'',av=m.ag!==null?m.ag:'';
+      const dis=locked?'disabled':'',inp=locked?'':(isSim?'sim':isUsr?'usr':'');
+      const badge=locked?'<span class="played-badge">Oynandı ✓</span>'
+        :isSim?'<span class="sim-badge">Simüle 🎲</span>'
+        :isUsr?'<span class="usr-badge">Sen değiştirdin ✏️</span>':'';
+      html+=`<div class="match-card${locked?' played':''}">
+        <span class="match-date">${m.date}</span>
+        <div class="match-team"><span>${ht.flag}</span><span class="tname">${ht.name}</span></div>
+        <div class="score-area">
+          <input type="number" class="score-input ${inp}" min="0" max="99" value="${hv}" placeholder="—" ${dis}
+            oninput="onScore('${gk}',${m.idx},'h',this.value)">
+          <span class="score-sep">:</span>
+          <input type="number" class="score-input ${inp}" min="0" max="99" value="${av}" placeholder="—" ${dis}
+            oninput="onScore('${gk}',${m.idx},'a',this.value)">
+        </div>
+        <div class="match-team away"><span>${at.flag}</span><span class="tname">${at.name}</span></div>
+        ${badge}
+      </div>`;
+    }
+  }
+  el.innerHTML=`
+    <div class="controls"><span class="group-title">${group.name}</span>
+      <button class="reset-btn" onclick="resetGroup('${gk}')">Sıfırla</button></div>
+    <p class="section-title">Puan Durumu</p>
+    <div class="standings"><table>
+      <thead><tr><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>Av</th><th>P</th></tr></thead>
+      <tbody id="tb-${gk}"></tbody></table></div>
+    <p class="section-title">Maçlar</p>
+    <div class="matches-grid">${html}</div>`;
+}
+
+// ============================================================
+// ELEME TURU — BRACKET DATA
+// ============================================================
+const BRACKET=[
+  // R32
+  {id:'M73',r:'R32',sA:{t:'R',g:'A'},sB:{t:'R',g:'B'},next:{m:'M90',s:'B'}},
+  {id:'M74',r:'R32',sA:{t:'W',g:'E'},sB:{t:'3',gs:['A','B','C','D','F']},next:{m:'M89',s:'A'}},
+  {id:'M75',r:'R32',sA:{t:'W',g:'F'},sB:{t:'R',g:'C'},next:{m:'M90',s:'A'}},
+  {id:'M76',r:'R32',sA:{t:'W',g:'C'},sB:{t:'R',g:'F'},next:{m:'M91',s:'A'}},
+  {id:'M77',r:'R32',sA:{t:'W',g:'I'},sB:{t:'3',gs:['C','D','F','G','H']},next:{m:'M89',s:'B'}},
+  {id:'M78',r:'R32',sA:{t:'R',g:'E'},sB:{t:'R',g:'I'},next:{m:'M91',s:'B'}},
+  {id:'M79',r:'R32',sA:{t:'W',g:'A'},sB:{t:'3',gs:['C','E','F','H','I']},next:{m:'M92',s:'A'}},
+  {id:'M80',r:'R32',sA:{t:'W',g:'L'},sB:{t:'3',gs:['E','H','I','J','K']},next:{m:'M92',s:'B'}},
+  {id:'M81',r:'R32',sA:{t:'W',g:'D'},sB:{t:'3',gs:['B','E','F','I','J']},next:{m:'M94',s:'A'}},
+  {id:'M82',r:'R32',sA:{t:'W',g:'G'},sB:{t:'3',gs:['A','E','H','I','J']},next:{m:'M94',s:'B'}},
+  {id:'M83',r:'R32',sA:{t:'R',g:'K'},sB:{t:'R',g:'L'},next:{m:'M93',s:'A'}},
+  {id:'M84',r:'R32',sA:{t:'W',g:'H'},sB:{t:'R',g:'J'},next:{m:'M93',s:'B'}},
+  {id:'M85',r:'R32',sA:{t:'W',g:'B'},sB:{t:'3',gs:['E','F','G','I','J']},next:{m:'M96',s:'A'}},
+  {id:'M86',r:'R32',sA:{t:'W',g:'J'},sB:{t:'R',g:'H'},next:{m:'M95',s:'A'}},
+  {id:'M87',r:'R32',sA:{t:'W',g:'K'},sB:{t:'3',gs:['D','E','I','J','L']},next:{m:'M96',s:'B'}},
+  {id:'M88',r:'R32',sA:{t:'R',g:'D'},sB:{t:'R',g:'G'},next:{m:'M95',s:'B'}},
+  // R16
+  {id:'M89',r:'R16',sA:{t:'W',m:'M74'},sB:{t:'W',m:'M77'},next:{m:'M97',s:'A'}},
+  {id:'M90',r:'R16',sA:{t:'W',m:'M75'},sB:{t:'W',m:'M73'},next:{m:'M97',s:'B'}},
+  {id:'M91',r:'R16',sA:{t:'W',m:'M76'},sB:{t:'W',m:'M78'},next:{m:'M99',s:'A'}},
+  {id:'M92',r:'R16',sA:{t:'W',m:'M79'},sB:{t:'W',m:'M80'},next:{m:'M99',s:'B'}},
+  {id:'M93',r:'R16',sA:{t:'W',m:'M83'},sB:{t:'W',m:'M84'},next:{m:'M98',s:'A'}},
+  {id:'M94',r:'R16',sA:{t:'W',m:'M81'},sB:{t:'W',m:'M82'},next:{m:'M98',s:'B'}},
+  {id:'M95',r:'R16',sA:{t:'W',m:'M86'},sB:{t:'W',m:'M88'},next:{m:'M100',s:'A'}},
+  {id:'M96',r:'R16',sA:{t:'W',m:'M85'},sB:{t:'W',m:'M87'},next:{m:'M100',s:'B'}},
+  // QF
+  {id:'M97',r:'QF',sA:{t:'W',m:'M89'},sB:{t:'W',m:'M90'},next:{m:'M101',s:'A'}},
+  {id:'M98',r:'QF',sA:{t:'W',m:'M93'},sB:{t:'W',m:'M94'},next:{m:'M101',s:'B'}},
+  {id:'M99',r:'QF',sA:{t:'W',m:'M91'},sB:{t:'W',m:'M92'},next:{m:'M102',s:'A'}},
+  {id:'M100',r:'QF',sA:{t:'W',m:'M95'},sB:{t:'W',m:'M96'},next:{m:'M102',s:'B'}},
+  // SF
+  {id:'M101',r:'SF',sA:{t:'W',m:'M97'},sB:{t:'W',m:'M98'},next:{m:'M104',s:'A'}},
+  {id:'M102',r:'SF',sA:{t:'W',m:'M99'},sB:{t:'W',m:'M100'},next:{m:'M104',s:'B'}},
+  // Final
+  {id:'M104',r:'Final',sA:{t:'W',m:'M101'},sB:{t:'W',m:'M102'},next:null},
+];
+
+const ko={};
+BRACKET.forEach(m=>{ko[m.id]={teamA:null,teamB:null,winner:null};});
+
+// ============================================================
+// BRACKET LAYOUT
+// Bracket sütun sırası (soldan sağa):
+// LR32(8) → LR16(4) → LQF(2) → LSF(1) → FIN(1) → RSF(1) → RQF(2) → RR16(4) → RR32(8)
+// ============================================================
+const BK_H  = 800;  // toplam bracket yüksekliği
+const BK_CW = 142;  // kart genişliği
+const BK_CH = 80;   // kart yüksekliği (2×38 + 4 divider)
+const BK_TH = 38;   // takım satırı yüksekliği
+const BK_GAP= 28;   // sütunlar arası boşluk
+const BK_CX = BK_CW + BK_GAP; // sütun adımı (170)
+
+// Sol → Sağ sütun sırası ve X pozisyonları
+const COLS=[
+  {ids:['M74','M77','M75','M73','M83','M84','M81','M82'],n:8,x:0,         side:'L',round:'Son 32'},
+  {ids:['M89','M90','M93','M94'],                        n:4,x:BK_CX,     side:'L',round:'Son 16'},
+  {ids:['M97','M98'],                                    n:2,x:BK_CX*2,   side:'L',round:'Çeyrek'},
+  {ids:['M101'],                                         n:1,x:BK_CX*3,   side:'L',round:'Yarı Final'},
+  {ids:['M104'],                                         n:1,x:BK_CX*4,   side:'C',round:'FİNAL'},
+  {ids:['M102'],                                         n:1,x:BK_CX*5,   side:'R',round:'Yarı Final'},
+  {ids:['M99','M100'],                                   n:2,x:BK_CX*6,   side:'R',round:'Çeyrek'},
+  {ids:['M91','M92','M95','M96'],                        n:4,x:BK_CX*7,   side:'R',round:'Son 16'},
+  {ids:['M76','M78','M79','M80','M86','M88','M85','M87'],n:8,x:BK_CX*8,   side:'R',round:'Son 32'},
+];
+const BK_TOTAL_W = BK_CX*8 + BK_CW; // 1484px
+
+function bkCY(n,i){return (BK_H/n)*(i+.5);}        // kart merkezi Y
+function bkTY(n,i){return bkCY(n,i)-BK_CH/2;}     // kart üst Y
+
+function slotBadge(slot){
+  if(slot.t==='W')return`1${slot.g}`;
+  if(slot.t==='R')return`2${slot.g}`;
+  if(slot.t==='3')return`3.`;
+  return'';
+}
+
+function assign3rdTeams(qualGroups){
+  const slots={M74:['A','B','C','D','F'],M77:['C','D','F','G','H'],M79:['C','E','F','H','I'],
+    M80:['E','H','I','J','K'],M81:['B','E','F','I','J'],M82:['A','E','H','I','J'],
+    M85:['E','F','G','I','J'],M87:['D','E','I','J','L']};
+  const asgn={},used=new Set(),keys=Object.keys(slots);
+  function bt(i){
+    if(i===keys.length)return true;
+    const sl=keys[i];
+    for(const g of slots[sl]){
+      if(qualGroups.includes(g)&&!used.has(g)){
+        asgn[sl]=g;used.add(g);if(bt(i+1))return true;
+        used.delete(g);delete asgn[sl];
+      }
+    }
+    return false;
+  }
+  bt(0);return asgn;
+}
+
+function generateBracket(resetPicks=true){
+  BRACKET.forEach(m=>{
+    ko[m.id].teamA=null;ko[m.id].teamB=null;
+    if(resetPicks)ko[m.id].winner=null;
+  });
+
+  const standings={};
+  for(const gk of Object.keys(GROUPS_ORIG))standings[gk]=calcStandings(gk);
+
+  const allThirds=[];
+  for(const gk of Object.keys(GROUPS_ORIG)){
+    const st=standings[gk];
+    if(st[2]&&st[2].P>0)allThirds.push({group:gk,team:st[2]});
+  }
+  allThirds.sort((a,b)=>{const ta=a.team,tb=b.team;return tb.Pts-ta.Pts||tb.GD-ta.GD||tb.GF-ta.GF||ta.name.localeCompare(tb.name);});
+  const best8=allThirds.slice(0,8);
+  const qualGroups=best8.map(x=>x.group);
+  const thirdMap=assign3rdTeams(qualGroups);
+  const thirdByGroup={};
+  best8.forEach(x=>{thirdByGroup[x.group]={name:x.team.name,flag:x.team.flag};});
+
+  function getPos(gk,pos){const st=standings[gk];return st[pos]?{name:st[pos].name,flag:st[pos].flag}:null;}
+
+  for(const def of BRACKET.filter(m=>m.r==='R32')){
+    const match=ko[def.id];
+    function resolve(slot){
+      if(slot.t==='W'){const t=getPos(slot.g,0);return t?{...t,badge:`1${slot.g}`}:null;}
+      if(slot.t==='R'){const t=getPos(slot.g,1);return t?{...t,badge:`2${slot.g}`}:null;}
+      if(slot.t==='3'){const g=thirdMap[def.id];return g&&thirdByGroup[g]?{...thirdByGroup[g],badge:`3${g}`}:null;}
+      return null;
+    }
+    match.teamA=resolve(def.sA);
+    match.teamB=resolve(def.sB);
+  }
+  renderBracket();
+}
+
+function selectWinner(matchId,side){
+  const m=ko[matchId];
+  m.winner=side==='A'?m.teamA:m.teamB;
+  advanceKo(matchId);
+  renderBracket();
+}
+
+function advanceKo(matchId){
+  const m=ko[matchId],def=BRACKET.find(b=>b.id===matchId);
+  if(!def||!def.next)return;
+  const nm=ko[def.next.m],changed=def.next.s==='A'?nm.teamA!==m.winner:nm.teamB!==m.winner;
+  if(changed){
+    if(def.next.s==='A')nm.teamA=m.winner;else nm.teamB=m.winner;
+    if(nm.winner){nm.winner=null;advanceKo(def.next.m);}
+  }
+}
+
+function resetKnockout(){
+  BRACKET.forEach(m=>{ko[m.id]={teamA:null,teamB:null,winner:null};});
+  renderBracket();
+}
+
+// ============================================================
+// BRACKET RENDER
+// ============================================================
+function renderBracket(){
+  let cards='',lines='';
+
+  // Kart HTML üret
+  function cardHtml(matchId,x,n,i,isFinal){
+    const y=bkTY(n,i),m=ko[matchId];
+    const def=BRACKET.find(b=>b.id===matchId);
+    const hasW=!!m.winner;
+    const aW=hasW&&m.teamA&&m.winner===m.teamA;
+    const bW=hasW&&m.teamB&&m.winner===m.teamB;
+
+    function teamRow(team,slot,side,isWin,isLose){
+      if(!team){
+        const lbl=slot.t==='W'?'?':slotBadge(slot)||'?';
+        return`<button class="bk-team bk-tbd" disabled style="height:${BK_TH}px">${lbl}</button>`;
+      }
+      const cls=isWin?'bk-win':isLose?'bk-lose':'';
+      const badge=team.badge?`<span class="bk-badge">${team.badge}</span>`:'';
+      const check=isWin?`<span class="bk-check">✓</span>`:'';
+      return`<button class="bk-team ${cls}" onclick="selectWinner('${matchId}','${side}')"
+        style="height:${BK_TH}px;width:100%;border:none">
+        ${badge}<span class="bk-flag">${team.flag}</span>
+        <span class="bk-name">${team.name}</span>${check}
+      </button>`;
+    }
+
+    cards+=`<div class="bk-card${isFinal?' final-card':''}"
+      style="left:${x}px;top:${y}px;width:${BK_CW}px;height:${BK_CH}px">
+      ${teamRow(m.teamA,def.sA,'A',aW,bW&&!aW)}
+      <div class="bk-divider"></div>
+      ${teamRow(m.teamB,def.sB,'B',bW,aW&&!bW)}
+    </div>`;
+  }
+
+  // Bağlantı çizgileri üret
+  const LC='#2a3a52',LW=1.5;
+  function addLines(col1,col2,isRight){
+    const {ids:ids1,n:n1,x:x1}=col1,{n:n2,x:x2}=col2;
+    if(ids1.length===1){
+      // Tek→Tek: düz yatay çizgi
+      const cy=bkCY(n1,0);
+      const x_a=isRight?x1:x1+BK_CW,x_b=isRight?x2+BK_CW:x2;
+      lines+=`<line x1="${x_a}" y1="${cy}" x2="${x_b}" y2="${cy}" stroke="${LC}" stroke-width="${LW}"/>`;
+      return;
+    }
+    for(let p=0;p<ids1.length;p+=2){
+      const cy1=bkCY(n1,p),cy2=bkCY(n1,p+1),cym=(cy1+cy2)/2;
+      const jx=isRight?x1-BK_GAP/2:x1+BK_CW+BK_GAP/2;
+      const e1=isRight?x1:x1+BK_CW;
+      const e2=isRight?x2+BK_CW:x2;
+      lines+=`
+        <line x1="${e1}" y1="${cy1}" x2="${jx}" y2="${cy1}" stroke="${LC}" stroke-width="${LW}"/>
+        <line x1="${e1}" y1="${cy2}" x2="${jx}" y2="${cy2}" stroke="${LC}" stroke-width="${LW}"/>
+        <line x1="${jx}" y1="${cy1}" x2="${jx}" y2="${cy2}" stroke="${LC}" stroke-width="${LW}"/>
+        <line x1="${jx}" y1="${cym}" x2="${e2}" y2="${cym}" stroke="${LC}" stroke-width="${LW}"/>`;
+    }
+  }
+
+  // Kartları render et
+  COLS.forEach(col=>{
+    col.ids.forEach((id,i)=>cardHtml(id,col.x,col.n,i,col.side==='C'));
+  });
+
+  // Çizgileri ekle (sütun çiftleri arasında)
+  for(let i=0;i<COLS.length-1;i++){
+    const c1=COLS[i],c2=COLS[i+1];
+    const isRight=c1.side==='R'||(c1.side==='C'&&c2.side==='R');
+    addLines(c1,c2,isRight);
+  }
+
+  // Round başlık etiketleri
+  const rnames=COLS.map(c=>`<div class="bk-rname" style="width:${BK_CW}px;margin-right:${BK_GAP}px;${c.side==='C'?'color:var(--gold)':''}">${c.round}</div>`).join('');
+
+  const inner=document.getElementById('bkInner');
+  const outer=document.getElementById('bkOuter');
+  document.getElementById('bkRnames').innerHTML=`<div style="display:flex">${rnames}</div>`;
+
+  inner.innerHTML=`<svg style="position:absolute;top:0;left:0;width:${BK_TOTAL_W}px;height:${BK_H}px;pointer-events:none;overflow:visible">${lines}</svg>${cards}`;
+  inner.style.width=`${BK_TOTAL_W}px`;
+  inner.style.height=`${BK_H}px`;
+  outer.style.width=`${BK_TOTAL_W+32}px`;
+
+  // Şampiyon
+  const fin=ko['M104'],box=document.getElementById('championBox');
+  if(fin&&fin.winner){
+    document.getElementById('champFlag').textContent=fin.winner.flag;
+    document.getElementById('champName').textContent=fin.winner.name;
+    box.style.display='block';
+  }else box.style.display='none';
+}
+
+// ============================================================
+// TAB & INIT
+// ============================================================
+function switchMain(key){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('thirdsSection').style.display='none';
+  if(key==='KO'){
+    document.getElementById('view-KO').classList.add('active');
+    generateBracket(false); // seçimleri koruyarak güncelle
+  }else{
+    document.getElementById(`g-${key}`).classList.add('active');
+    renderThirds();
+  }
+  document.querySelectorAll(`.tab[data-key="${key}"]`).forEach(t=>t.classList.add('active'));
+}
+
+function init(){
+  const tabsEl=document.getElementById('mainTabs'),viewsEl=document.getElementById('groupViews');
+  Object.keys(GROUPS_ORIG).forEach((gk,i)=>{
+    const tab=document.createElement('button');
+    tab.className='tab'+(i===0?' active':'');
+    tab.textContent=`Grup ${gk}`;tab.dataset.key=gk;
+    tab.onclick=()=>switchMain(gk);tabsEl.appendChild(tab);
+    const view=document.createElement('div');
+    view.id=`g-${gk}`;view.className='view'+(i===0?' active':'');
+    viewsEl.appendChild(view);
+  });
+  const koTab=document.createElement('button');
+  koTab.className='tab ko-tab';koTab.textContent='🏆 Eleme Turu';koTab.dataset.key='KO';
+  koTab.onclick=()=>switchMain('KO');tabsEl.appendChild(koTab);
+  Object.keys(GROUPS_ORIG).forEach(gk=>{buildGroupView(gk);renderStandings(gk);});
+  renderBracket();
+}
+
+init();
+</script>
+</body>
+</html>
