@@ -1,6 +1,7 @@
-import { fetchMatches, fetchStandings } from '@/lib/football-api'
+import { fetchMatches } from '@/lib/football-api'
 import { Match, StandingGroup } from '@/lib/types'
 import { formatMatchDate, statusLabel, isLive } from '@/lib/utils'
+import { computeStandings, liveTeamIds } from '@/lib/standings'
 import GroupTabs from '@/components/GroupTabs'
 
 export const revalidate = 60
@@ -8,12 +9,14 @@ export const revalidate = 60
 export default async function Home() {
   let matches: Match[] = []
   let standings: StandingGroup[] = []
+  let liveIds: number[] = []
   let apiError = ''
 
   try {
-    const [mData, sData] = await Promise.all([fetchMatches(), fetchStandings()])
+    const mData = await fetchMatches()
     matches = mData.matches ?? []
-    standings = sData.standings ?? []
+    standings = computeStandings(matches)
+    liveIds = [...liveTeamIds(matches)]
   } catch (e) {
     apiError = e instanceof Error ? e.message : 'Veri alınamadı'
   }
@@ -61,7 +64,7 @@ export default async function Home() {
       <div className="mb-8 h-px w-full bg-line/50" />
 
       {/* Groups */}
-      <GroupTabs matches={matches} standings={standings} />
+      <GroupTabs matches={matches} standings={standings} liveIds={liveIds} />
     </div>
   )
 }

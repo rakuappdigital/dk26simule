@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import NavLinks from '@/components/NavLinks'
@@ -70,6 +71,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           {/* ── Page content ───────────────────────────────── */}
           <main>{children}</main>
+
+          <Analytics />
 
           {/* ── Footer ─────────────────────────────────────── */}
           <footer className="mt-24 border-t border-line/50 py-12">

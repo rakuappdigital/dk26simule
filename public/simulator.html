@@ -297,17 +297,57 @@ const simSet = new Set(), userSet = new Set();
 let simDirty = false;
 
 // ============================================================
+// TAKIM GÜÇLER — FIFA Haziran 2026 + Transfermarkt 2026 kadro değerleri
+// Kaynak: FIFA sıralaması (0.6 ağırlık) + kadro piyasa değeri (0.4 ağırlık)
+// Ölçek: 0–100
+// ============================================================
+const TEAM_STRENGTH = {
+  'Fransa':96,'Arjantin':95,'İspanya':94,'İngiltere':93,'Hollanda':88,
+  'Portekiz':91,'Brezilya':89,'Almanya':87,'Belçika':85,'Fas':86,
+  'Hırvatistan':78,'Kolombiya':77,'Meksika':76,'Senegal':75,'Uruguay':73,
+  'ABD':72,'Japonya':70,'İsviçre':69,'İran':67,'Türkiye':64,
+  'Ekvador':63,'Avusturya':62,'Güney Kore':60,'Norveç':58,
+  'Avustralya':56,'Cezayir':55,'Fildişi Sahili':55,'Mısır':54,
+  'Kanada':52,'Gana':38,'Panama':48,'Bosna Hersek':35,
+  'İsveç':45,'Paraguay':44,'Çekya':44,'İskoçya':42,
+  'DR Kongo':40,'Özbekistan':36,'Tunus':32,'Güney Afrika':30,
+  'Suudi Arabistan':28,'Katar':28,'Irak':27,'Haiti':20,
+  'Yeşil Burun':24,'Yeni Zelanda':18,'Curaçao':14,'Ürdün':12,
+};
+
+// Poisson dağılımı örneklemesi (futbol gol dağılımına uygun)
+function poissonGoals(lambda) {
+  lambda = Math.max(0.12, lambda);
+  let L = Math.exp(-lambda), k = 0, p = 1;
+  do { k++; p *= Math.random(); } while (p > L);
+  return Math.min(k - 1, 8);
+}
+
+// Güce dayalı beklenen gol hesabı ve simülasyon
+function simMatchGoals(hStr, aStr) {
+  const diff = (hStr - aStr) / 100;  // -1 ile +1 arası
+  const baseXG = 1.15;               // futbolda ortalama gol/maç ≈ 1.1
+  const scale  = 1.8;                // güç farkının etkisi
+  return [
+    poissonGoals(baseXG + diff * scale),
+    poissonGoals(baseXG - diff * scale),
+  ];
+}
+
+// ============================================================
 // SİMÜLASYON
 // ============================================================
-function randomGoals(){const r=Math.random();return r<.28?0:r<.55?1:r<.76?2:r<.89?3:r<.96?4:5;}
-
 function handleSimBtn(){
   for(const gk of Object.keys(GROUPS_ORIG)){
     for(let i=0;i<GROUPS_ORIG[gk].matches.length;i++){
       const key=`${gk}_${i}`;
       if(GROUPS_ORIG[gk].matches[i].played||userSet.has(key))continue;
-      state[gk].matches[i].hg=randomGoals();
-      state[gk].matches[i].ag=randomGoals();
+      const m=GROUPS_ORIG[gk].matches[i];
+      const hs=TEAM_STRENGTH[GROUPS_ORIG[gk].teams[m.h].name]??50;
+      const as_=TEAM_STRENGTH[GROUPS_ORIG[gk].teams[m.a].name]??50;
+      const [hg,ag]=simMatchGoals(hs,as_);
+      state[gk].matches[i].hg=hg;
+      state[gk].matches[i].ag=ag;
       simSet.add(key);
     }
   }
@@ -497,7 +537,7 @@ const BK_CX = BK_CW + BK_GAP; // sütun adımı (170)
 
 // Sol → Sağ sütun sırası ve X pozisyonları
 const COLS=[
-  {ids:['M74','M77','M75','M73','M83','M84','M81','M82'],n:8,x:0,         side:'L',round:'Son 32'},
+  {ids:['M74','M77','M73','M75','M83','M84','M81','M82'],n:8,x:0,         side:'L',round:'Son 32'},
   {ids:['M89','M90','M93','M94'],                        n:4,x:BK_CX,     side:'L',round:'Son 16'},
   {ids:['M97','M98'],                                    n:2,x:BK_CX*2,   side:'L',round:'Çeyrek'},
   {ids:['M101'],                                         n:1,x:BK_CX*3,   side:'L',round:'Yarı Final'},

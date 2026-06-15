@@ -9,16 +9,16 @@ const GROUPS = ['A','B','C','D','E','F','G','H','I','J','K','L']
 interface Props {
   matches: Match[]
   standings: StandingGroup[]
+  liveIds: number[]
 }
 
-export default function GroupTabs({ matches, standings }: Props) {
+export default function GroupTabs({ matches, standings, liveIds }: Props) {
   const [active, setActive] = useState('A')
+  const liveSet = new Set(liveIds)
 
   const standingMap: Record<string, StandingsRow[]> = {}
   standings.forEach(s => {
-    if (s.group) {
-      standingMap[s.group.replace('GROUP_', '')] = s.table
-    }
+    standingMap[s.group] = s.table
   })
 
   const groupMatches = matches.filter(
@@ -77,6 +77,12 @@ export default function GroupTabs({ matches, standings }: Props) {
                             className="h-5 w-5 object-contain"
                           />
                           <span className="text-sm font-medium text-primary">{row.team.shortName}</span>
+                          {liveSet.has(row.team.id) && (
+                            <span className="flex items-center gap-1 rounded-full bg-positive/15 px-1.5 py-0.5 text-[10px] font-bold text-positive">
+                              <span className="h-1.5 w-1.5 animate-pulse-dot rounded-full bg-positive" />
+                              CANLI
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="py-3 text-center text-sm text-muted">{row.playedGames}</td>
