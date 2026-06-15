@@ -74,16 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <TrophySVG className="h-6 w-auto text-gold opacity-60" />
                   <div>
                     <p className="text-sm font-bold text-primary">DK26 Simüle</p>
-                    <div className="mt-2">
-                      <div className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-1.5">
-                        <img
-                          src="/raku-logo.png"
-                          alt="RakuApp"
-                          className="h-5 w-auto"
-                        />
-                        <span className="text-xs font-medium text-[#2b3058]">© 2026</span>
-                      </div>
-                    </div>
+                    <span className="text-xs text-muted">© 2026 RakuApp</span>
                   </div>
                 </div>
 
@@ -112,6 +103,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     ))}
                   </div>
                 </div>
+              </div>
+
+              {/* RakuApp logo */}
+              <div className="mt-10 border-t border-line/30 pt-8 flex justify-center">
+                <img
+                  src="/raku-logo.png"
+                  alt="RakuApp"
+                  className="h-10 w-auto"
+                />
               </div>
             </div>
           </footer>
