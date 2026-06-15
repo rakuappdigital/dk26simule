@@ -76,8 +76,35 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           {/* ── Footer ─────────────────────────────────────── */}
           <footer className="mt-24 border-t border-line/50 py-12">
-            <div className="mx-auto max-w-6xl px-6">
-              <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
+            <div className="mx-auto max-w-6xl px-6 space-y-10">
+              {/* Other apps */}
+              <div>
+                <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted">
+                  Diğer Uygulamalarımız
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {[
+                    { href: 'https://dk26simule.vercel.app', label: 'DK26 Simüle', desc: 'Dünya Kupası simülatörü' },
+                    { href: 'https://paginapasaj.vercel.app', label: 'Pagina Pasaj', desc: 'Günlük kitap pasajı aparatınız' },
+                    { href: 'https://biroluruz.vercel.app', label: '#biroluruz', desc: 'Gerçek zamanlı DK tahmin oyunu' },
+                    { href: 'https://elemento-tr.vercel.app', label: 'Elemento', desc: 'Elementlerle çizim yap' },
+                  ].map(app => (
+                    <a
+                      key={app.href}
+                      href={app.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group rounded-xl border border-line bg-card px-4 py-3 transition-all hover:border-accent/40 hover:bg-raised"
+                    >
+                      <p className="text-sm font-semibold text-primary group-hover:text-accent transition-colors">{app.label}</p>
+                      <p className="mt-0.5 text-xs text-muted">{app.desc}</p>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bottom bar */}
+              <div className="flex flex-col items-center gap-4 border-t border-line/30 pt-6 sm:flex-row sm:justify-between">
                 <div className="flex items-center gap-3">
                   <TrophySVG className="h-6 w-auto text-gold opacity-60" />
                   <div>
@@ -95,27 +122,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted">
-                  <a
-                    href="https://biroluruz.vercel.app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-primary transition-colors"
-                  >
-                    #biroluruz Tahmin Oyunu
-                  </a>
-                  <a
-                    href="https://kafi-nu.vercel.app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-primary transition-colors"
-                  >
-                    Kafi Coffee
-                  </a>
-                  <span className="text-muted/40">
-                    Veri: football-data.org
-                  </span>
-                </div>
+                <span className="text-xs text-muted/40">Veri: football-data.org</span>
               </div>
             </div>
           </footer>
