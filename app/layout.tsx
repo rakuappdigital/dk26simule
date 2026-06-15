@@ -105,23 +105,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
               {/* Bottom bar */}
               <div className="flex flex-col items-center gap-4 border-t border-line/30 pt-6 sm:flex-row sm:justify-between">
-                <div className="flex items-center gap-3">
-                  <TrophySVG className="h-6 w-auto text-gold opacity-60" />
-                  <div>
-                    <p className="text-sm font-bold text-primary">DK26 Simüle</p>
-                    <p className="text-xs text-muted">
-                      <a
-                        href="https://rakuapp.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:text-accent transition-colors"
-                      >
-                        RakuApp
-                      </a>{' '}
-                      tarafından yapıldı
-                    </p>
-                  </div>
-                </div>
+                {/* RakuApp branding */}
+                <a
+                  href="https://rakuapp.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-3"
+                >
+                  <img
+                    src="/raku-logo.png"
+                    alt="RakuApp"
+                    className="h-7 w-auto raku-logo transition-opacity group-hover:opacity-80"
+                  />
+                  <span className="text-xs text-muted group-hover:text-primary transition-colors">
+                    © 2026 RakuApp
+                  </span>
+                </a>
                 <span className="text-xs text-muted/40">Veri: football-data.org</span>
               </div>
             </div>
