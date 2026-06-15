@@ -56,15 +56,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {/* Right controls */}
               <div className="flex items-center gap-2 shrink-0">
                 <ThemeToggle />
-                <a
-                  href="https://rakuapp.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hidden sm:flex items-center gap-1.5 rounded-full border border-line px-3 py-1 text-xs font-semibold text-muted transition-all hover:border-accent/50 hover:text-primary"
-                >
-                  <RakuDot />
-                  RakuApp
-                </a>
               </div>
             </div>
           </header>
@@ -104,7 +95,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   </p>
                   <div className="flex flex-col gap-2">
                     {[
-                      { href: 'https://dk26simule.vercel.app', label: 'DK26 Simüle', desc: 'Dünya Kupası simülatörü' },
+                      { href: 'https://elemento-tr.vercel.app', label: 'Elemento', desc: 'Elementlerle Oyna' },
                       { href: 'https://paginapasaj.vercel.app', label: 'Pagina Pasaj', desc: 'Günlük kitap pasajı aparatınız' },
                       { href: 'https://biroluruz.vercel.app', label: '#biroluruz', desc: 'Gerçek zamanlı Dünya Kupası tahmin oyunu' },
                     ].map(app => (
