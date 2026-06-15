@@ -25,6 +25,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme(next)
     localStorage.setItem('dk26-theme', next)
     document.documentElement.setAttribute('data-theme', next)
+    document.querySelectorAll('iframe').forEach(iframe => {
+      iframe.contentWindow?.postMessage({ type: 'theme', theme: next }, '*')
+    })
   }
 
   return <Ctx.Provider value={{ theme, toggle }}>{children}</Ctx.Provider>

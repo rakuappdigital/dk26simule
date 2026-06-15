@@ -110,7 +110,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <img
                   src="/raku-logo.png"
                   alt="RakuApp"
-                  className="h-10 w-auto"
+                  className="h-14 w-auto raku-logo"
                 />
               </div>
             </div>
