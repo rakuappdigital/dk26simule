@@ -95,6 +95,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       { href: 'https://elemento-tr.vercel.app', label: 'Elemento', desc: 'Elementlerle Oyna' },
                       { href: 'https://paginapasaj.vercel.app', label: 'Pagina Pasaj', desc: 'Günlük kitap pasajı aparatınız' },
                       { href: 'https://biroluruz.vercel.app', label: '#biroluruz', desc: 'Gerçek zamanlı Dünya Kupası tahmin oyunu' },
+                    { href: 'https://judgemeornot.vercel.app', label: 'JudgeMeOrNot', desc: 'Arkadaşınla dava yönet!' },
                     ].map(app => (
                       <a
                         key={app.href}
