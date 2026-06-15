@@ -74,19 +74,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <TrophySVG className="h-6 w-auto text-gold opacity-60" />
                   <div>
                     <p className="text-sm font-bold text-primary">DK26 Simüle</p>
-                    <a
-                      href="https://rakuapp.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group mt-1 flex items-center gap-1.5"
-                    >
+                    <div className="mt-1 flex items-center gap-1.5">
                       <img
                         src="/raku-logo.png"
                         alt="RakuApp"
-                        className="h-4 w-auto raku-logo opacity-60 transition-opacity group-hover:opacity-100"
+                        className="h-4 w-auto raku-logo opacity-60"
                       />
-                      <span className="text-xs text-muted group-hover:text-primary transition-colors">tarafından yapıldı</span>
-                    </a>
+                      <span className="text-xs text-muted">tarafından yapıldı</span>
+                    </div>
                   </div>
                 </div>
 
