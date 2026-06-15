@@ -62,11 +62,3 @@ input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 input[type=number] { -moz-appearance: textfield; }
 
-/* RakuApp logo — remove white bg per theme */
-.raku-logo {
-  mix-blend-mode: multiply;
-}
-[data-theme="dark"] .raku-logo {
-  mix-blend-mode: normal;
-  filter: brightness(0) invert(1);
-}

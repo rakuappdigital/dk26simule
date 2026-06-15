@@ -75,11 +75,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <div>
                     <p className="text-sm font-bold text-primary">DK26 Simüle</p>
                     <div className="mt-1 flex items-center gap-2">
-                      <img
-                        src="/raku-logo.png"
-                        alt=""
-                        className="h-3.5 w-auto raku-logo opacity-50"
-                      />
+                      <div className="rounded bg-white px-1.5 py-0.5">
+                        <img
+                          src="/raku-logo.png"
+                          alt="RakuApp"
+                          className="h-3 w-auto"
+                        />
+                      </div>
                       <span className="text-xs text-muted">© 2026 RakuApp</span>
                     </div>
                   </div>
