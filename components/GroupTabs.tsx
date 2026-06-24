@@ -27,6 +27,7 @@ export default function GroupTabs({ matches, standings, liveIds }: Props) {
   const finished = groupMatches.filter(m => m.status === 'FINISHED').slice().reverse()
   const upcoming = groupMatches.filter(m => m.status !== 'FINISHED')
   const rows = standingMap[active] ?? []
+  const statuses = qualStatuses(rows)
 
   return (
     <div>
@@ -67,7 +68,10 @@ export default function GroupTabs({ matches, standings, liveIds }: Props) {
                   {rows.map((row, i) => (
                     <tr key={row.team.id} className="group transition-colors hover:bg-raised/40">
                       <td className="py-3 pl-4">
-                        <PosBadge pos={i + 1} />
+                        <div className="flex items-center gap-1">
+                          <PosBadge pos={i + 1} />
+                          <QualDot status={statuses[i]} />
+                        </div>
                       </td>
                       <td className="py-3">
                         <div className="flex items-center gap-2.5">
@@ -98,9 +102,16 @@ export default function GroupTabs({ matches, standings, liveIds }: Props) {
                 </tbody>
               </table>
               {/* Legend */}
-              <div className="flex flex-wrap gap-4 border-t border-line/50 px-4 py-2.5">
-                <Legend color="bg-positive" label="İlk 2 → Eleme" />
-                <Legend color="bg-gold" label="3. sıra → Play-off şansı" />
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-line/50 px-4 py-2.5">
+                <Legend color="bg-positive" label="İlk 2 → Son 32'ye geçer" />
+                <Legend color="bg-gold" label="3. sıra → Havuza girer (en iyi 8)" />
+                {statuses.some(s => s !== 'pending') && (
+                  <span className="w-full text-[10px] text-muted leading-relaxed">
+                    <span className="font-bold text-positive">✓</span> Kesin geçti &nbsp;·&nbsp;
+                    <span className="font-bold text-gold">⚖</span> Havuza girdi &nbsp;·&nbsp;
+                    <span className="font-bold text-red-400">✕</span> Kesin elendi
+                  </span>
+                )}
               </div>
             </div>
           ) : (
@@ -147,6 +158,50 @@ function PosBadge({ pos }: { pos: number }) {
       {pos}
     </span>
   )
+}
+
+type QualStatus = 'qualified' | 'third' | 'eliminated' | 'pending'
+
+function qualStatuses(rows: StandingsRow[]): QualStatus[] {
+  const groupDone = rows.length > 0 && rows.every(r => r.playedGames >= 3)
+  return rows.map((row, i) => {
+    const maxPts = row.points + 3 * (3 - row.playedGames)
+    const others = rows.filter((_, j) => j !== i)
+
+    // Kesin elendi: 2+ takım zaten benim ulaşabileceğim maksimumun üzerinde
+    if (others.filter(o => o.points > maxPts).length >= 2) return 'eliminated'
+
+    // Kesin geçti: en fazla 1 takım benim mevcut puanımı geçebilir
+    if (others.filter(o => (o.points + 3 * (3 - o.playedGames)) > row.points).length <= 1)
+      return 'qualified'
+
+    // Grup bittiyse 3. sıra = havuza girdi
+    if (groupDone && i === 2) return 'third'
+
+    return 'pending'
+  })
+}
+
+function QualDot({ status }: { status: QualStatus }) {
+  if (status === 'qualified')
+    return (
+      <span title="Son 32'ye kesin geçti" className="text-[10px] font-bold text-positive leading-none">
+        ✓
+      </span>
+    )
+  if (status === 'third')
+    return (
+      <span title="3. sıra havuzuna girdi — en iyi 8'den biri olursa ilerler" className="text-[10px] font-bold text-gold leading-none">
+        ⚖
+      </span>
+    )
+  if (status === 'eliminated')
+    return (
+      <span title="Kesin elendi — matematiksel olarak ilk 2'ye giremez" className="text-[10px] font-bold text-red-400 leading-none">
+        ✕
+      </span>
+    )
+  return null
 }
 
 function Legend({ color, label }: { color: string; label: string }) {

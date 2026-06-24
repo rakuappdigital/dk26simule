@@ -239,7 +239,7 @@
   </div>
 </div>
 
-<footer>Yeşil=gerçek · Sarı=simüle · Mavi=sen değiştirdin · Simüle edilen sonuçlar gerçeği yansıtmaz</footer>
+<footer>Yeşil=gerçek · Sarı=simüle · Mavi=sen değiştirdin &nbsp;|&nbsp; ✓ Son 32'ye geçti &nbsp;·&nbsp; ⚖ 3. sıra havuzu (en iyi 8) &nbsp;·&nbsp; ✕ Elendi &nbsp;|&nbsp; Simüle edilen sonuçlar gerçeği yansıtmaz</footer>
 
 <script>
 // ============================================================
@@ -397,15 +397,40 @@ function calcStandings(gk){
   return s.sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.name.localeCompare(b.name));
 }
 
+function getQualStatus(st, idx){
+  const row=st[idx];
+  const maxPts=row.Pts+3*(3-row.P);
+  const others=st.filter((_,j)=>j!==idx);
+  // Kesin elendi: 2+ takım maksimumumu geçmiş
+  if(others.filter(o=>o.Pts>maxPts).length>=2)return'eliminated';
+  // Kesin geçti: en fazla 1 takım mevcut puanımı geçebilir
+  if(others.filter(o=>(o.Pts+3*(3-o.P))>row.Pts).length<=1)return'qualified';
+  // Grup bittiyse 3. sıra
+  const groupDone=st.every(t=>t.P>=3);
+  if(groupDone&&idx===2)return'third';
+  return'pending';
+}
+
 function renderStandings(gk){
   const st=calcStandings(gk),tbody=document.getElementById(`tb-${gk}`);
   if(!tbody)return;
+  const hasAny=st.some((_,i)=>getQualStatus(st,i)!=='pending');
   tbody.innerHTML=st.map((t,pos)=>{
     const cls=['pos-1','pos-2','pos-3','pos-4'][pos],gd=t.GD>0?`+${t.GD}`:t.GD;
-    return`<tr><td><div class="team-cell"><div class="team-pos ${cls}">${pos+1}</div><span>${t.flag}</span><span>${t.name}</span></div></td>
+    const qs=getQualStatus(st,pos);
+    const qualIcon=
+      qs==='qualified'?`<span title="Son 32'ye kesin geçti" style="font-size:.65rem;font-weight:800;color:var(--green);margin-left:4px;line-height:1">✓</span>`:
+      qs==='third'?`<span title="3. sıra havuzuna girdi — en iyi 8'den biri olursa ilerler" style="font-size:.65rem;font-weight:800;color:var(--yellow);margin-left:4px;line-height:1">⚖</span>`:
+      qs==='eliminated'?`<span title="Kesin elendi — matematiksel olarak ilk 2'ye giremez" style="font-size:.65rem;font-weight:800;color:var(--red);margin-left:4px;line-height:1">✕</span>`:'';
+    return`<tr><td><div class="team-cell"><div class="team-pos ${cls}">${pos+1}</div><span>${t.flag}</span><span>${t.name}</span>${qualIcon}</div></td>
       <td>${t.P}</td><td>${t.W}</td><td>${t.D}</td><td>${t.L}</td><td>${t.GF}</td><td>${t.GA}</td><td>${gd}</td>
       <td class="pts-cell">${t.Pts}</td></tr>`;
   }).join('');
+  // Açıklama satırı — en az bir takımın durumu kesinleştiyse göster
+  if(hasAny){
+    const leg=document.getElementById(`leg-${gk}`);
+    if(leg)leg.style.display='flex';
+  }
 }
 
 function renderThirds(){
@@ -478,7 +503,13 @@ function buildGroupView(gk){
     <p class="section-title">Puan Durumu</p>
     <div class="standings"><table>
       <thead><tr><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>Av</th><th>P</th></tr></thead>
-      <tbody id="tb-${gk}"></tbody></table></div>
+      <tbody id="tb-${gk}"></tbody></table>
+      <div id="leg-${gk}" style="display:none;gap:10px;flex-wrap:wrap;padding:7px 14px;border-top:1px solid var(--border);font-size:.68rem;color:var(--muted);">
+        <span><b style="color:var(--green)">✓</b> Kesin geçti</span>
+        <span><b style="color:var(--yellow)">⚖</b> Havuza girdi (en iyi 8)</span>
+        <span><b style="color:var(--red)">✕</b> Kesin elendi</span>
+      </div>
+    </div>
     <p class="section-title">Maçlar</p>
     <div class="matches-grid">${html}</div>`;
 }
@@ -807,7 +838,94 @@ function init(){
   renderBracket();
 }
 
+// ============================================================
+// GERÇEk SKOR YÜKLEME — /api/matches endpoint'inden
+// ============================================================
+const TEAM_NAME_MAP = {
+  'Mexico':'Meksika','South Africa':'Güney Afrika','Korea Republic':'Güney Kore',
+  'Czechia':'Çekya','Czech Republic':'Çekya','Canada':'Kanada',
+  'Bosnia and Herzegovina':'Bosna Hersek','Qatar':'Katar','Switzerland':'İsviçre',
+  'Brazil':'Brezilya','Morocco':'Fas','Haiti':'Haiti','Scotland':'İskoçya',
+  'United States':'ABD','Paraguay':'Paraguay','Australia':'Avustralya',
+  'Turkey':'Türkiye','Türkiye':'Türkiye','Germany':'Almanya','Curaçao':'Curaçao',
+  "Côte d'Ivoire":'Fildişi Sahili','Ivory Coast':'Fildişi Sahili','Ecuador':'Ekvador',
+  'Netherlands':'Hollanda','Japan':'Japonya','Sweden':'İsveç','Tunisia':'Tunus',
+  'Belgium':'Belçika','Egypt':'Mısır','Iran':'İran','IR Iran':'İran',
+  'New Zealand':'Yeni Zelanda','Spain':'İspanya','Cape Verde':'Yeşil Burun',
+  'Saudi Arabia':'Suudi Arabistan','Uruguay':'Uruguay','France':'Fransa',
+  'Senegal':'Senegal','Iraq':'Irak','Norway':'Norveç','Argentina':'Arjantin',
+  'Algeria':'Cezayir','Austria':'Avusturya','Jordan':'Ürdün','Portugal':'Portekiz',
+  'DR Congo':'DR Kongo','Congo DR':'DR Kongo','Democratic Republic of Congo':'DR Kongo',
+  'Uzbekistan':'Özbekistan','Colombia':'Kolombiya','England':'İngiltere',
+  'Croatia':'Hırvatistan','Ghana':'Gana','Panama':'Panama',
+};
+
+let _lastMatchHash = '';
+
+async function loadRealScores() {
+  try {
+    const res = await fetch('/api/matches');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.matches) return;
+
+    // Değişiklik yoksa arayüzü yeniden render etme
+    const hash = JSON.stringify(data.matches.map(m => [m.id, m.status, m.score?.fullTime]));
+    if (hash === _lastMatchHash) return;
+    _lastMatchHash = hash;
+
+    let updated = false;
+
+    for (const match of data.matches) {
+      if (match.stage !== 'GROUP_STAGE') continue;
+      const gk = match.group?.replace('GROUP_', '');
+      if (!gk || !GROUPS_ORIG[gk]) continue;
+
+      const hmName = TEAM_NAME_MAP[match.homeTeam?.name] || match.homeTeam?.name;
+      const awName = TEAM_NAME_MAP[match.awayTeam?.name] || match.awayTeam?.name;
+      if (!hmName || !awName) continue;
+
+      const group = GROUPS_ORIG[gk];
+      const matchIdx = group.matches.findIndex(m =>
+        group.teams[m.h].name === hmName && group.teams[m.a].name === awName
+      );
+      if (matchIdx === -1) continue;
+
+      const isFinished = match.status === 'FINISHED';
+      const hg = match.score?.fullTime?.home ?? null;
+      const ag = match.score?.fullTime?.away ?? null;
+
+      if (isFinished && hg !== null && ag !== null) {
+        const orig = GROUPS_ORIG[gk].matches[matchIdx];
+        if (!orig.played || orig.hg !== hg || orig.ag !== ag) {
+          GROUPS_ORIG[gk].matches[matchIdx].played = true;
+          GROUPS_ORIG[gk].matches[matchIdx].hg = hg;
+          GROUPS_ORIG[gk].matches[matchIdx].ag = ag;
+
+          const key = `${gk}_${matchIdx}`;
+          if (!userSet.has(key)) {
+            state[gk].matches[matchIdx].played = true;
+            state[gk].matches[matchIdx].hg = hg;
+            state[gk].matches[matchIdx].ag = ag;
+            simSet.delete(key);
+          }
+          updated = true;
+        }
+      }
+    }
+
+    if (updated) {
+      rebuildAll();
+      generateBracket(false);
+    }
+  } catch (e) {
+    console.warn('Maç verileri yüklenemedi:', e);
+  }
+}
+
 init();
+loadRealScores();
+setInterval(loadRealScores, 60000); // her 60 saniyede bir güncelle
 
 function shareResult(){
   const fin=ko['M104'];
