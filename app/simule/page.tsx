@@ -7,7 +7,7 @@ export default function SimulePage() {
   return (
     <div className="flex flex-col" style={{ height: 'calc(100vh - 57px)' }}>
       <iframe
-        src="/simulator.html"
+        src="/api/sim-html"
         className="flex-1 w-full border-0"
         title="WC2026 Simülatörü"
         allow="accelerometer"
