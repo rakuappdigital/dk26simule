@@ -839,78 +839,45 @@ function init(){
 }
 
 // ============================================================
-// GERÇEk SKOR YÜKLEME — /api/matches endpoint'inden
+// GERÇEK SKOR YÜKLEME — /api/sim-data (sunucu tarafı isim mapping)
 // ============================================================
-const TEAM_NAME_MAP = {
-  'Mexico':'Meksika','South Africa':'Güney Afrika','Korea Republic':'Güney Kore',
-  'Czechia':'Çekya','Czech Republic':'Çekya','Canada':'Kanada',
-  'Bosnia and Herzegovina':'Bosna Hersek','Qatar':'Katar','Switzerland':'İsviçre',
-  'Brazil':'Brezilya','Morocco':'Fas','Haiti':'Haiti','Scotland':'İskoçya',
-  'United States':'ABD','Paraguay':'Paraguay','Australia':'Avustralya',
-  'Turkey':'Türkiye','Türkiye':'Türkiye','Germany':'Almanya','Curaçao':'Curaçao',
-  "Côte d'Ivoire":'Fildişi Sahili','Ivory Coast':'Fildişi Sahili','Ecuador':'Ekvador',
-  'Netherlands':'Hollanda','Japan':'Japonya','Sweden':'İsveç','Tunisia':'Tunus',
-  'Belgium':'Belçika','Egypt':'Mısır','Iran':'İran','IR Iran':'İran',
-  'New Zealand':'Yeni Zelanda','Spain':'İspanya','Cape Verde':'Yeşil Burun',
-  'Saudi Arabia':'Suudi Arabistan','Uruguay':'Uruguay','France':'Fransa',
-  'Senegal':'Senegal','Iraq':'Irak','Norway':'Norveç','Argentina':'Arjantin',
-  'Algeria':'Cezayir','Austria':'Avusturya','Jordan':'Ürdün','Portugal':'Portekiz',
-  'DR Congo':'DR Kongo','Congo DR':'DR Kongo','Democratic Republic of Congo':'DR Kongo',
-  'Uzbekistan':'Özbekistan','Colombia':'Kolombiya','England':'İngiltere',
-  'Croatia':'Hırvatistan','Ghana':'Gana','Panama':'Panama',
-};
-
-let _lastMatchHash = '';
+let _lastSimHash = '';
 
 async function loadRealScores() {
   try {
-    const res = await fetch('/api/matches');
+    const res = await fetch('/api/sim-data');
     if (!res.ok) return;
-    const data = await res.json();
-    if (!data.matches) return;
+    const {played} = await res.json();
+    if (!played?.length) return;
 
-    // Değişiklik yoksa arayüzü yeniden render etme
-    const hash = JSON.stringify(data.matches.map(m => [m.id, m.status, m.score?.fullTime]));
-    if (hash === _lastMatchHash) return;
-    _lastMatchHash = hash;
+    const hash = JSON.stringify(played);
+    if (hash === _lastSimHash) return;
+    _lastSimHash = hash;
 
     let updated = false;
-
-    for (const match of data.matches) {
-      if (match.stage !== 'GROUP_STAGE') continue;
-      const gk = match.group?.replace('GROUP_', '');
+    for (const m of played) {
+      const {group: gk, home: hmName, away: awName, hg, ag} = m;
       if (!gk || !GROUPS_ORIG[gk]) continue;
 
-      const hmName = TEAM_NAME_MAP[match.homeTeam?.name] || match.homeTeam?.name;
-      const awName = TEAM_NAME_MAP[match.awayTeam?.name] || match.awayTeam?.name;
-      if (!hmName || !awName) continue;
-
       const group = GROUPS_ORIG[gk];
-      const matchIdx = group.matches.findIndex(m =>
-        group.teams[m.h].name === hmName && group.teams[m.a].name === awName
+      const matchIdx = group.matches.findIndex(mi =>
+        group.teams[mi.h].name === hmName && group.teams[mi.a].name === awName
       );
       if (matchIdx === -1) continue;
 
-      const isFinished = match.status === 'FINISHED';
-      const hg = match.score?.fullTime?.home ?? null;
-      const ag = match.score?.fullTime?.away ?? null;
-
-      if (isFinished && hg !== null && ag !== null) {
-        const orig = GROUPS_ORIG[gk].matches[matchIdx];
-        if (!orig.played || orig.hg !== hg || orig.ag !== ag) {
-          GROUPS_ORIG[gk].matches[matchIdx].played = true;
-          GROUPS_ORIG[gk].matches[matchIdx].hg = hg;
-          GROUPS_ORIG[gk].matches[matchIdx].ag = ag;
-
-          const key = `${gk}_${matchIdx}`;
-          if (!userSet.has(key)) {
-            state[gk].matches[matchIdx].played = true;
-            state[gk].matches[matchIdx].hg = hg;
-            state[gk].matches[matchIdx].ag = ag;
-            simSet.delete(key);
-          }
-          updated = true;
+      const orig = GROUPS_ORIG[gk].matches[matchIdx];
+      if (!orig.played || orig.hg !== hg || orig.ag !== ag) {
+        GROUPS_ORIG[gk].matches[matchIdx].played = true;
+        GROUPS_ORIG[gk].matches[matchIdx].hg = hg;
+        GROUPS_ORIG[gk].matches[matchIdx].ag = ag;
+        const key = `${gk}_${matchIdx}`;
+        if (!userSet.has(key)) {
+          state[gk].matches[matchIdx].played = true;
+          state[gk].matches[matchIdx].hg = hg;
+          state[gk].matches[matchIdx].ag = ag;
+          simSet.delete(key);
         }
+        updated = true;
       }
     }
 
@@ -919,7 +886,7 @@ async function loadRealScores() {
       generateBracket(false);
     }
   } catch (e) {
-    console.warn('Maç verileri yüklenemedi:', e);
+    console.warn('Simülatör verisi yüklenemedi:', e);
   }
 }
 
