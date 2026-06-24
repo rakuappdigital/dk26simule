@@ -171,8 +171,9 @@ function qualStatuses(rows: StandingsRow[]): QualStatus[] {
     // Kesin elendi: 2+ takım zaten benim ulaşabileceğim maksimumun üzerinde
     if (others.filter(o => o.points > maxPts).length >= 2) return 'eliminated'
 
-    // Kesin geçti: en fazla 1 takım benim mevcut puanımı geçebilir
-    if (others.filter(o => (o.points + 3 * (3 - o.playedGames)) > row.points).length <= 1)
+    // Kesin geçti: en fazla 1 takım benim puanıma ulaşabilir veya geçebilir
+    // (>= kullanıyoruz — eşit puana ulaşan takım tiebreaker'da önüme geçebilir)
+    if (others.filter(o => (o.points + 3 * (3 - o.playedGames)) >= row.points).length <= 1)
       return 'qualified'
 
     // Grup bittiyse 3. sıra = havuza girdi

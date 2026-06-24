@@ -380,11 +380,52 @@ function rebuildAll(){
 }
 
 // ============================================================
-// PUAN HESAPLAMA
+// PUAN HESAPLAMA — FIFA WC2026 tiebreaker kuralları ile
+// 1a: kafa kafaya puan → 1b: kafa kafaya averaj → 1c: kafa kafaya gol
+// → 2: genel averaj → 3: genel gol
 // ============================================================
+function h2hStats(tiedIdxs, matches){
+  const stats={}, tiedSet=new Set(tiedIdxs);
+  for(const i of tiedIdxs) stats[i]={pts:0,gd:0,gf:0};
+  for(const m of matches){
+    if(m.hg===null||m.ag===null)continue;
+    if(!tiedSet.has(m.h)||!tiedSet.has(m.a))continue;
+    stats[m.h].gf+=m.hg; stats[m.h].gd+=m.hg-m.ag;
+    stats[m.a].gf+=m.ag; stats[m.a].gd+=m.ag-m.hg;
+    if(m.hg>m.ag) stats[m.h].pts+=3;
+    else if(m.hg<m.ag) stats[m.a].pts+=3;
+    else{stats[m.h].pts++;stats[m.a].pts++;}
+  }
+  return stats;
+}
+
+function sortWithH2H(teams, matches){
+  teams.sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF);
+  let i=0;
+  while(i<teams.length){
+    let j=i+1;
+    while(j<teams.length&&teams[j].Pts===teams[i].Pts)j++;
+    if(j-i>1){
+      const grp=teams.slice(i,j);
+      const h2h=h2hStats(grp.map(t=>t.idx),matches);
+      grp.sort((a,b)=>
+        (h2h[b.idx].pts-h2h[a.idx].pts)||
+        (h2h[b.idx].gd -h2h[a.idx].gd) ||
+        (h2h[b.idx].gf -h2h[a.idx].gf) ||
+        (b.GD-a.GD)||(b.GF-a.GF)||
+        a.name.localeCompare(b.name)
+      );
+      for(let k=0;k<grp.length;k++) teams[i+k]=grp[k];
+    }
+    i=j;
+  }
+  return teams;
+}
+
 function calcStandings(gk){
+  const matches=state[gk].matches;
   const s=state[gk].teams.map((t,i)=>({idx:i,name:t.name,flag:t.flag,P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0}));
-  for(const m of state[gk].matches){
+  for(const m of matches){
     if(m.hg===null||m.ag===null)continue;
     s[m.h].P++;s[m.a].P++;
     s[m.h].GF+=m.hg;s[m.h].GA+=m.ag;
@@ -394,7 +435,7 @@ function calcStandings(gk){
     else{s[m.h].D++;s[m.h].Pts++;s[m.a].D++;s[m.a].Pts++;}
   }
   s.forEach(t=>t.GD=t.GF-t.GA);
-  return s.sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.name.localeCompare(b.name));
+  return sortWithH2H(s,matches);
 }
 
 function getQualStatus(st, idx){
@@ -403,8 +444,8 @@ function getQualStatus(st, idx){
   const others=st.filter((_,j)=>j!==idx);
   // Kesin elendi: 2+ takım maksimumumu geçmiş
   if(others.filter(o=>o.Pts>maxPts).length>=2)return'eliminated';
-  // Kesin geçti: en fazla 1 takım mevcut puanımı geçebilir
-  if(others.filter(o=>(o.Pts+3*(3-o.P))>row.Pts).length<=1)return'qualified';
+  // Kesin geçti: en fazla 1 takım puanıma ulaşabilir veya geçebilir
+  if(others.filter(o=>(o.Pts+3*(3-o.P))>=row.Pts).length<=1)return'qualified';
   // Grup bittiyse 3. sıra
   const groupDone=st.every(t=>t.P>=3);
   if(groupDone&&idx===2)return'third';
