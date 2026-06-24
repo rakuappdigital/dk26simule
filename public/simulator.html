@@ -897,13 +897,11 @@ async function loadRealScores() {
 
     let updated = false;
     for (const m of played) {
-      const {group: gk, home: hmName, away: awName, hg, ag} = m;
+      // {g, h, a, hg, ag} — integer indeksler, string karşılaştırması yok
+      const {g: gk, h, a, hg, ag} = m;
       if (!gk || !GROUPS_ORIG[gk]) continue;
 
-      const group = GROUPS_ORIG[gk];
-      const matchIdx = group.matches.findIndex(mi =>
-        group.teams[mi.h].name === hmName && group.teams[mi.a].name === awName
-      );
+      const matchIdx = GROUPS_ORIG[gk].matches.findIndex(mi => mi.h === h && mi.a === a);
       if (matchIdx === -1) continue;
 
       const orig = GROUPS_ORIG[gk].matches[matchIdx];
